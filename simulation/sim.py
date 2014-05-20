@@ -40,7 +40,12 @@ def AsymmetricGossip(g, q):
     g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, 1)
 
 def Broadcast(g, q): 
-  pass
+  # Choose a node from `g` uniformly and update its neighbors' opinions. 
+  u = g.vs[random.randint(0, g.vcount() - 1)]
+  for v in u.neighbors(): 
+    v['agency'].UpdateOpinion(u, u['agency'].opinion, q, 1 / u.degree())
+    
+  
 
 
 #
@@ -165,7 +170,6 @@ class Agent:
     return UNSHIFT(self.opinion)
 
   def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
-    #self.opinion = int(((1 - q) * self.opinion) + (q * altOpinion)) # FIXME
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
     self.history.append((self.opinion, transaction))
 
@@ -199,14 +203,14 @@ def ReluctantAgent (Agent):
 if __name__ == '__main__': 
   #g = igraph.Graph.Barabasi(20, 3)
   #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
-  g = igraph.Graph.Erdos_Renyi(2000, 0.1)
+  g = igraph.Graph.Erdos_Renyi(200, 0.1)
 
   sim = Simulation(g)
   print sim.TestConvergence()
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
   #        max_rounds=500000)#rounds=1000000)
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=1000000)
+  sim.Run(dynamicsModel=Broadcast, q=0.5, rounds=100000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
