@@ -69,18 +69,34 @@ class Simulation:
     # Return a list of (Vertex, Agent) pairs.
     pass
 
-  def Simulate(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
-    # TODO check for convergence
-    
-    for i in range(rounds):
-      dynamicsModel(self.g, q)
-    
+  def Run(self, dynamicsModel=SymmetricGossip, g=0.5, rounds=1000):
+    # Run simulation some number of rounds w/o checking for convergence
+    for r in range(rounds):
+      dynamicsModel(self.g, q) 
     return [ agent.opinion for agent in self.g.vs['agency'] ]
+
+
+  def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, q=0.5, max_rounds=1000, err=0.001):
+    # Return a tuple (r, W) containing the number of rounds 
+    # and the final opinion vector resp.
+    
+    for r in range(max_rounds):
+      # Iterate dynamics model. 
+      dynamicsModel(self.g, q)
+
+      # Test for convergence.
+      W = [ agent.opinion for agent in self.g.vs['agency'] ]
+      if max(W) - min(W) <= err: 
+        return (r+1, W)
       
+    return (r+1, W)
+
+  
 
 
 #
-# Agents 
+# Agents. Opinion is typically a real scalar, but can be any type 
+# that supports addition and scalar multiplication.
 #
 
 class Agent:
@@ -132,7 +148,7 @@ if __name__ == '__main__':
 
 
   sim = Simulation(g)
-  print sim.Simulate(dynamicsModel=AsymmetricGossip, rounds=1000)
+  print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, q=0.5, max_rounds=10000)
 
 
   style = {}
