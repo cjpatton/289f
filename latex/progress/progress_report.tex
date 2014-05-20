@@ -140,21 +140,21 @@ The opinions at the other augmented nodes are updated as follows:
 \[
 \tilde{\bm w}_{i' +j N}^{(k)} = \tilde{\bm w}_{i' + (j-1)N}^{(k-1)'},~j=1,...,\tau_i - 1,~i \in V_r.
 \]
-Let us define $\tilde{\bm A}^{(k)}$ as the overall updating matrix in this stage, we have:
+To summarize, let us define $\tilde{\bm A}^{(k)}$ as the updating matrix in this stage, we have:
 \[
 \tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}
 \]
 where $\tilde{\bm A}^{(k)}$ is:
-\[
+\begin{equation} \label{eq:a_update}
 \tilde{A}_{ij}^{(k)} = \begin{cases}
 A_{ij}^{(k)} &,~i \in V \setminus V_r, \\
 A_{ij}^{(k)} &,~i = i', \\
 1 &,~i = j~{\rm and}~i \in V_r,\\
-1 &,~i = m + \ell N,~j=m + (\ell-1) N~{\rm for some}~m \in V_r, \\
-1 &,~i = m' + \ell N,~j=m' + (\ell-1) N~{\rm for some}~m \in V_r, \\
+1 &,~i = m + \ell N,~j=m + (\ell-1) N~{\rm for~some}~m \in V_r, \\
+1 &,~i = m' + \ell N,~j=m' + (\ell-1) N~{\rm for~some}~m \in V_r, \\
 0 &,~{\rm otherwise}.
 \end{cases}
-\]
+\end{equation}
 
 \section{(Preliminary) Simulation Studies}
 

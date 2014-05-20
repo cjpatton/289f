@@ -79,7 +79,11 @@ class Simulation:
       dynamicsModel(self.g, q) 
     return [ agent.opinion for agent in self.g.vs['agency'] ]
 
-  def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, q=0.5, max_rounds=1000, err=0.001):
+  def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, 
+                                q=0.5, 
+                                max_rounds=1000, 
+                                err=0.001):
+
     # Return a tuple (r, W) containing the number of rounds 
     # and the final opinion vector resp.
     
@@ -88,11 +92,17 @@ class Simulation:
       dynamicsModel(self.g, q)
 
       # Test for convergence.
-      W = [ agent.opinion for agent in self.g.vs['agency'] ]
-      if max(W) - min(W) <= err: 
-        return (r+1, W)
+      convergence = True
+      for c in self.g.components():
+        W = [ self.g.vs[u]['agency'].opinion for u in c ]
+        if max(W) - min(W) > err: 
+          convergence = False
+          break
       
-    return (r+1, W)
+      if convergence:
+        return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
+      
+    return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
 
   
 
@@ -149,9 +159,10 @@ def ReluctantAgent (Agent):
 if __name__ == '__main__': 
   g = igraph.Graph.Barabasi(20, 3)
 
-
   sim = Simulation(g)
-  print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, q=0.5, max_rounds=10000)
+  print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
+                                q=0.5, 
+                                max_rounds=1000)
 
 
   #style = {}
