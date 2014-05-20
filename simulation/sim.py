@@ -1,7 +1,5 @@
 # sim.py - Simulation of asynchronous consensus models.
 # TODO
-#  - Arithmetic on `opnion` over integers for efficiency. 
-#    Write a Agent.GetOpinion() which converts to float. 
 #  - RelucatantAgent
 #  - Broadcast()
 #  - Simulation.IterAgents()
@@ -9,7 +7,16 @@
 import igraph
 import random
 
-PRECISION = 10 ** 4
+#
+# The simulator does integer arithmetic under the hood in order to 
+# speed things up. `PRECISION` can be adjusted to increase or 
+# decrease precision. 
+#
+
+PRECISION = 10 ** 5
+SHIFT = lambda(x) : int(x * PRECISION)
+UNSHIFT = lambda(x) : float(x) / PRECISION
+
 
 #
 # Asynchronous opnion dynamics models. Nodes of `g` are expected to have 
@@ -78,18 +85,21 @@ class Simulation:
 
   def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
     # Run simulation some number of rounds w/o checking 
-    # for convergence. (For efficiency's sake.) 
+    # for convergence. (For efficiency's sake.)
+    q = SHIFT(q)
     for r in range(rounds):
       dynamicsModel(self.g, q) 
-    return [ agent.opinion for agent in self.g.vs['agency'] ]
+    return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
   def TimeOfConvergence(self, err=0.0001):
+    err = SHIFT(err)
+    print "hey, yah!", len(self.g.vs)
     T = 0.0
     for u in range(len(self.g.vs)):
       agent = self.g.vs[u]['agency']
       consensus = agent.opinion
       i = len(agent.history) - 1
-      while abs(agent.history[i][0] - consensus) > err:
+      while i >= 0 and abs(agent.history[i][0] - consensus) <= err:
         i -= 1
       while i >= 0:
         T += agent.history[i][1]
@@ -97,6 +107,7 @@ class Simulation:
     return int(T)
 
   def TestConvergence(self, err=0.0001):
+    err = SHIFT(err)
     for c in self.g.components():
       W = [ self.g.vs[u]['agency'].opinion for u in c ]
       if (max(W) - min(W)) > err: 
@@ -141,17 +152,21 @@ class Agent:
   # and `q` in [0 .. 1], the weight of alternative opinions. 
 
   def __init__(self, initialOpinion):
-    self.history = [(initialOpinion, 0)]
-    self.initialOpinion = self.opinion = initialOpinion
+    self.history = [(SHIFT(initialOpinion), 0)]
+    self.initialOpinion = self.opinion = SHIFT(initialOpinion)
 
   def RestoreInitialOpinion(self):
     self.opinion = self.initialOpinion
   
   def SetOpinion(self, opinion):
-    self.opinion = opinion
+    self.opinion = SHIFT(opinion)
+
+  def GetOpinion(self):
+    return UNSHIFT(self.opinion)
 
   def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
-    self.opinion = ((1 - q) * self.opinion) + (q * altOpinion)
+    #self.opinion = int(((1 - q) * self.opinion) + (q * altOpinion)) # FIXME
+    self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
     self.history.append((self.opinion, transaction))
 
 
@@ -184,14 +199,14 @@ def ReluctantAgent (Agent):
 if __name__ == '__main__': 
   #g = igraph.Graph.Barabasi(20, 3)
   #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
-  g = igraph.Graph.Erdos_Renyi(20, 0.1)
+  g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
   sim = Simulation(g)
   print sim.TestConvergence()
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
-  #        max_rounds=10000)#rounds=1000000)
-  sim.Run(dynamicsModel=AsymmetricGossip, q=0.5, rounds=500000)
+  #        max_rounds=500000)#rounds=1000000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=1000000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
