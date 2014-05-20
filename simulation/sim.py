@@ -77,40 +77,19 @@ class Simulation:
     # Return a list of (Vertex, Agent) pairs.
     pass # TODO 
 
-  def Run(self, dynamicsModel=SymmetricGossip, g=0.5, rounds=1000):
+  def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
     # Run simulation some number of rounds w/o checking 
     # for convergence. (For efficiency's sake.) 
     for r in range(rounds):
       dynamicsModel(self.g, q) 
     return [ agent.opinion for agent in self.g.vs['agency'] ]
 
-  def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, 
-                                q=0.5, 
-                                max_rounds=1000, 
-                                err=0.00001):
-
-    # Return a tuple (r, W) containing the number of rounds 
-    # and the final opinion vector resp.
-    
-    cc = self.g.components()
-    for r in range(max_rounds):
-      # Iterate dynamics model. 
-      dynamicsModel(self.g, q)
-
-      # Test for convergence.
-      convergence = True
-      for c in cc:
-        W = [ self.g.vs[u]['agency'].opinion for u in c ]
-        if (max(W) - min(W)) > err: 
-          convergence = False
-          break
-      
-      if convergence:
-        return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
-      
-    return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
-
-  
+  def TestConvergence(self, err=0.0001):
+    for c in self.g.components():
+      W = [ self.g.vs[u]['agency'].opinion for u in c ]
+      if (max(W) - min(W)) > err: 
+        return False
+    return True
 
 
 #
@@ -164,12 +143,14 @@ def ReluctantAgent (Agent):
 
 if __name__ == '__main__': 
   #g = igraph.Graph.Barabasi(20, 3)
-  g = igraph.Graph.Erdos_Renyi(20, 0.1)
+  g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
   sim = Simulation(g)
-  print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
-                                q=0.5, 
-                                max_rounds=10000)
+  print sim.TestConvergence()
+  sim.Run(dynamicsModel=AsymmetricGossip, 
+          q=0.5, 
+          rounds=1000000)
+  print sim.TestConvergence()
 
   print len(g.components())
 
