@@ -9,6 +9,8 @@
 import igraph
 import random
 
+PRECISION = 10 ** 4
+
 #
 # Asynchronous opnion dynamics models. Nodes of `g` are expected to have 
 # an `Agent` attribute. `q` in [0 .. 1] is the weight of the alternate
@@ -17,19 +19,18 @@ import random
 
 def SymmetricGossip(g, q):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
-  (u,v) = random.choice(list(g.es)).tuple
+  (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
   opinion = g.vs[u]['agency'].opinion
-  g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q)
-  g.vs[v]['agency'].UpdateOpinion(g.vs[u], opinion, q)
+  g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, 0)
+  g.vs[v]['agency'].UpdateOpinion(g.vs[u], opinion, q, 1)
 
 def AsymmetricGossip(g, q):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
-  u = random.randint(0, len(g.vs) - 1) 
-  neighbors = g.vs[u].neighbors()
-  if len(neighbors) > 0:
-    v = random.choice(neighbors).index
-    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q)
+  u = random.randint(0, g.vcount() - 1) 
+  if g.vs[u].degree() > 0:
+    v = g.vs[u].neighbors()[random.randint(0, g.vs[u].degree() - 1)].index
+    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, 1)
 
 def Broadcast(g, q): 
   pass
@@ -44,8 +45,6 @@ def Broadcast(g, q):
 
 class Simulation: 
  
-  precision = 10 ** 4
-
   def __init__(self, g, agents=None):
     self.g = g
     if agents:
@@ -84,6 +83,19 @@ class Simulation:
       dynamicsModel(self.g, q) 
     return [ agent.opinion for agent in self.g.vs['agency'] ]
 
+  def TimeOfConvergence(self, err=0.0001):
+    T = 0.0
+    for u in range(len(self.g.vs)):
+      agent = self.g.vs[u]['agency']
+      consensus = agent.opinion
+      i = len(agent.history) - 1
+      while abs(agent.history[i][0] - consensus) > err:
+        i -= 1
+      while i >= 0:
+        T += agent.history[i][1]
+        i -= 1
+    return int(T)
+
   def TestConvergence(self, err=0.0001):
     for c in self.g.components():
       W = [ self.g.vs[u]['agency'].opinion for u in c ]
@@ -91,6 +103,32 @@ class Simulation:
         return False
     return True
 
+  def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, 
+                                 q=0.5, 
+                                 max_rounds=1000, 
+                                 err=0.0001):
+ 
+    # Return a tuple (r, W) containing the number of rounds 
+    # and the final opinion vector resp. This is way more slow
+    # than running a bunch of rounds and tesing for convergence. 
+
+    cc = self.g.components()
+    for r in range(max_rounds):
+      # Iterate dynamics model. 
+      dynamicsModel(self.g, q)
+
+      # Test for convergence.
+      convergence = True
+      for c in cc:
+        W = [ self.g.vs[u]['agency'].opinion for u in c ]
+        if (max(W) - min(W)) > err: 
+          convergence = False
+          break
+
+      if convergence:
+        return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
+
+    return (r+1, [ agent.opinion for agent in self.g.vs['agency'] ])
 
 #
 # Agents. Opinion is typically a real scalar, but can be any type 
@@ -103,6 +141,7 @@ class Agent:
   # and `q` in [0 .. 1], the weight of alternative opinions. 
 
   def __init__(self, initialOpinion):
+    self.history = [(initialOpinion, 0)]
     self.initialOpinion = self.opinion = initialOpinion
 
   def RestoreInitialOpinion(self):
@@ -111,8 +150,9 @@ class Agent:
   def SetOpinion(self, opinion):
     self.opinion = opinion
 
-  def UpdateOpinion(self, anAgent, altOpinion, q): 
+  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
     self.opinion = ((1 - q) * self.opinion) + (q * altOpinion)
+    self.history.append((self.opinion, transaction))
 
 
 class StubbornAgent (Agent): 
@@ -122,8 +162,8 @@ class StubbornAgent (Agent):
   def __init__(self, initialOpinion):
     Agent.__init__(initialOpinion)
 
-  def UpdateOpinion(self, anAgent, altOpinion, q): 
-    pass
+  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
+    self.history.append((self.opinion, transaction))
 
 
 def ReluctantAgent (Agent): 
@@ -134,7 +174,7 @@ def ReluctantAgent (Agent):
     Agent.__init__(initialOpinion)
     self.tao = updateRate 
      
-  def UpdateOpinion(self, anAgent, altOpinion, q): # TODO
+  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): # TODO
     pass
 
 
@@ -143,16 +183,17 @@ def ReluctantAgent (Agent):
 
 if __name__ == '__main__': 
   #g = igraph.Graph.Barabasi(20, 3)
-  g = igraph.Graph.Erdos_Renyi(2000, 0.1)
+  #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
+  g = igraph.Graph.Erdos_Renyi(20, 0.1)
 
   sim = Simulation(g)
   print sim.TestConvergence()
-  sim.Run(dynamicsModel=AsymmetricGossip, 
-          q=0.5, 
-          rounds=1000000)
+  #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
+  #        q=0.5, 
+  #        max_rounds=10000)#rounds=1000000)
+  sim.Run(dynamicsModel=AsymmetricGossip, q=0.5, rounds=500000)
   print sim.TestConvergence()
-
-  print len(g.components())
+  print sim.TimeOfConvergence()
 
   #style = {}
   #igraph.plot(g, "graph.png", **style)
