@@ -89,9 +89,9 @@ where $0 \leq P_{ij}^{(k)} \leq 1$ models the trust agent $i$ has on agent $j$ a
 
 The vector $\hat{\bm w}_i^{(k)}$ is the opinion that agent $i$ is supposed to hold at time $k$. In DeGroot's model, the agents are updating instantly such that ${\bm w}_i^{(k)} = \hat{\bm w}_i^{(k)} $. In this case, it is known that ${\bm w}_i^{(k)}$ converges to the average of $\{{\bm w}_i^{(0)} \}$ asymptotically, i.e., achieving the `wisdom of the crowd',  under some mild assumptions. 
 However, in our model, some agents are reluctant such that they don't update \emph{immediately}. Instead, ${\bm w}_i^{(k)}$ is updated by:
-\[
-{\bm w}_i^{(k)} = \frac{c_i^{(k)}}{\tau_i} \hat{\bm w}_i^{(k)} + \frac{\tau_i - c_i^{(k)}}{\tau_i} \bar{\bm w}_i^{(k-c_i^{(k)})},~i \in V_r,
-\]
+\begin{equation} \label{eq:adapt}
+{\bm w}_i^{(k)} = \frac{c_i^{(k)}}{\tau_i} \hat{\bm w}_i^{(k - c_i^{(k)} + 1)} + \frac{\tau_i - c_i^{(k)}}{\tau_i} {\bm w}_i^{(k-c_i^{(k)})},~i \in V_r,
+\end{equation}
 where $V_r \subseteq V$ is the set of reluctant agents and 
 \[
 c_i^{(k)} = \begin{cases}
@@ -106,7 +106,14 @@ In this section, we perform a convergence analysis for the proposed opinion dyna
 
 We found that our proposed model can be analyzed under the framework of \cite{}, which studied a delayed consensus model. In the analysis, the main idea is to consider an augmented system with a few extra nodes proportional to the maximum delay allowed in the system. As the augmented system is delay-free, it can subsequently be analyzed using the available tools. 
 
-Let us apply the above approach to our model. We consider a directed graph $G' = (V',E')$ where $V'$ contains all the nodes from $V$ together with a few augmented node, defined as follows. 
+Let us apply the above approach to our model. We consider a directed graph $G' = (V',E')$ where $V'$ contains all the nodes from $V$ together with a few augmented node, defined as follows. For each $i \in V_r$, we define $1 + 2(\tau_i - 1)$ new nodes denoted by $\{ i' \} \cup \{i + N, ..., i + (\tau_i-1)N\} \cup \{ i'+N, ..., i' + (\tau_i-1)N\}$. Here, the $i'$th node stores the value of $\hat{\bm w}_i^{(k)}$. The nodes $\{i + N, ..., i + (\tau_i-1)N\}$ and $\{ i'+N, ..., i' + (\tau_i-1)N\}$ stores the delayed version of ${\bm w}_i$ and $\hat{\bm w}_i$, respectively. The inter-connectivity of these nodes are best illustrated by the example in Fig.~\ref{fig:augment}. 
+
+\begin{figure}[t]
+\centerline{\resizebox{.55\textwidth}{!}{\includegraphics{./augmented_graph}}
+}
+\caption{The circuit model for the $(i,k)$ branch.
+} \label{fig:augment}
+\end{figure}
 
 \section{(Preliminary) Simulation Studies}
 
