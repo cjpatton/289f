@@ -2,6 +2,9 @@
 # TODO
 #  - Arithmetic on `opnion` over integers for efficiency. 
 #    Write a Agent.GetOpinion() which converts to float. 
+#  - RelucatantAgent
+#  - Broadcast()
+#  - Simulation.IterAgents()
 #
 import igraph
 import random
@@ -23,8 +26,10 @@ def AsymmetricGossip(g, q):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
   u = random.randint(0, len(g.vs) - 1) 
-  v = random.choice(g.vs[u].neighbors()).index
-  g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q)
+  neighbors = g.vs[u].neighbors()
+  if len(neighbors) > 0:
+    v = random.choice(neighbors).index
+    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q)
 
 def Broadcast(g, q): 
   pass
@@ -34,7 +39,7 @@ def Broadcast(g, q):
 # Simulate opinion dynamics over `g` given a particular mode. Run 
 # until convergence, at most `rounds` times. If no agents are 
 # provided, standard agents with initial opinion between 0 and 10 
-# are generated. 
+# are generated. Note that the graph `g` need not be fully connected. 
 #
 
 class Simulation: 
@@ -70,7 +75,7 @@ class Simulation:
 
   def IterAgents(self): 
     # Return a list of (Vertex, Agent) pairs.
-    pass
+    pass # TODO 
 
   def Run(self, dynamicsModel=SymmetricGossip, g=0.5, rounds=1000):
     # Run simulation some number of rounds w/o checking 
@@ -82,20 +87,21 @@ class Simulation:
   def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, 
                                 q=0.5, 
                                 max_rounds=1000, 
-                                err=0.001):
+                                err=0.00001):
 
     # Return a tuple (r, W) containing the number of rounds 
     # and the final opinion vector resp.
     
+    cc = self.g.components()
     for r in range(max_rounds):
       # Iterate dynamics model. 
       dynamicsModel(self.g, q)
 
       # Test for convergence.
       convergence = True
-      for c in self.g.components():
+      for c in cc:
         W = [ self.g.vs[u]['agency'].opinion for u in c ]
-        if max(W) - min(W) > err: 
+        if (max(W) - min(W)) > err: 
           convergence = False
           break
       
@@ -157,13 +163,15 @@ def ReluctantAgent (Agent):
 
 
 if __name__ == '__main__': 
-  g = igraph.Graph.Barabasi(20, 3)
+  #g = igraph.Graph.Barabasi(20, 3)
+  g = igraph.Graph.Erdos_Renyi(20, 0.1)
 
   sim = Simulation(g)
   print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
                                 q=0.5, 
-                                max_rounds=1000)
+                                max_rounds=10000)
 
+  print len(g.components())
 
   #style = {}
   #igraph.plot(g, "graph.png", **style)

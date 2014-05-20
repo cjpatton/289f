@@ -40,13 +40,27 @@ paralist}
     {\baselineskip}{2\topsep}      %space above and below
     {\rm}                   %Body font
     {0pt}{\bfseries}  %Heading indent and font
-    {}                      %after heading
+    {~}                      %after heading
     { }                      %head after space
     {\thmname{#1}\thmnumber{#2}.}
 
-\theoremstyle{t}
-\newtheorem{q}{Q}
+%\theoremstyle{t}
+%\newtheorem{q}{Q}
 \parindent=0pt 
+
+\newtheorem{Lemma}{Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{Theorem}{Theorem}
+\newtheorem{Corollary}{Corollary}
+\newtheorem{Claim}{Claim}
+\newtheorem{Fact}{Fact}
+\newtheorem{Observation}{Observation}
+
+
+\theoremstyle{remark}
+\newtheorem{Remark}{Remark}
+\newtheorem{Example}{Example}
+
 
 \begin{document}
 
@@ -125,7 +139,7 @@ c_i^{(0)} = M,~\forall~ i \in V'~{\rm and}~\tilde{ \bm w}_i^{(0)} = \begin{cases
 \]
 where $M > \tau_i$ for all $i$ denotes that all the reluctant agents are not in the process of adapting to a new opinion. 
 
-At the \emph{updating} stage, we have that 
+\textbf{Updating stage}: At the \emph{updating} stage, we have that 
 \[
 \tilde{\bm w}_i^{(k)} = \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'},~i \in V \setminus V_r,
 \]
@@ -155,6 +169,28 @@ A_{ij}^{(k)} &,~i = i', \\
 0 &,~{\rm otherwise}.
 \end{cases}
 \end{equation}
+
+\textbf{Adaptation stage}: At the \emph{adaptation} stage, the non-reluctant agents and the augmented nodes will remain stationary, i.e.,
+\[
+\tilde{\bm w}_i^{(k')} = \tilde{\bm w}_i^{(k)},~i \in V' \setminus V_r.
+\]
+Instead, the opinion of the reluctant agent will be adapted using information from the counter variable as follows:
+\[
+\tilde{\bm w}_i^{(k')} = \begin{cases}
+\displaystyle \frac{c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i' + (c_i^{(k)}-1)N}^{(k)} + \frac{\tau_i - c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i + c_i^{(k)}N}^{(k)} &,~{\rm if}~c_i^{(k)} \leq \tau_i, \vspace{.2cm} \\
+\tilde{\bm w}_i^{(k)} &,~{\rm otherwise}.
+\end{cases}
+\]
+With some efforts, the dynamics described above can also be written using an update matrix $\tilde{\bm A}^{(k')}$ as in the above. 
+
+To obtain our main result about the convergence of the proposed model, we observe  that both $\tilde{\bm A}^{(k)}$ and $\tilde{\bm A}^{(k')}$ are stochastic as long as ${\bm A}^{(k)}$ is. To summarize, we have:
+\begin{prop}
+Assuming that $\{ A_{ij}^{(k)} \}$ constitutes a sequence of opinion updates that lead to  consensus in the DeGroot's model as $k \rightarrow \infty$, then the opinions in reluctant updates model will also reach a consensus  as $k \rightarrow \infty$. In other words, we have
+\[
+\lim_{k \rightarrow \infty} \prod_{\ell=1}^{k} \tilde{\bm A}^{(\ell')} \tilde{\bm A}^{(\ell)} = {\bf 1} ({\bm \pi}^\star)^T,
+\]
+for some ${\bm \pi}^\star \in \mathbb{R}^{|V'|}$
+\end{prop}
 
 \section{(Preliminary) Simulation Studies}
 
