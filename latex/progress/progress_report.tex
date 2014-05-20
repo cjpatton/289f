@@ -81,7 +81,7 @@ This document reports on the recent progress we have made for the course project
 %The idea of modeling opinion dynamics has been pioneered by DeGroot \cite{Degroot_74}. He proposes a simple model of social interactions in which both the time it will take to reach consensus, as well as the consensus score itslf, can be computed easily. Though this model has proven to be insightful in this domain, it doesn't capture the dynamics of many consensus scenarios. Namely, we would like to capture the throughput and latency dynamics of censor networks. 
 
 Let us first recap on the system model.
-We consider an undirected graph $G = (V,E)$. Each agent $i \in V$ holds an initial opinion ${\bm w}_i^{(0)} \in \mathbb{R}^L$. At time $k$, the agents exchange their beliefs with the others to compute:
+We consider an undirected graph $G = (V,E)$ with $|V| = n$. Each agent $i \in V$ holds an initial opinion ${\bm w}_i^{(0)} \in \mathbb{R}^L$. At time $k$, the agents exchange their beliefs with the others to compute:
 \begin{equation}\label{eq:op}
 \hat{\bm w}_i^{(k)} = \sum_{j \in \mathcal{N}_i} P_{ij}^{(k)} {\bm w}_j^{(k-1)},
 \end{equation}
@@ -101,8 +101,14 @@ c_i^{(k)} = \begin{cases}
 \]
 is a counter variable and $\tau_i \in \mathbb{Z}$ is the adaptation rate of $i$. In other words, the reluctant agent will slowly adapt to the new opinion in $\tau_i$ time steps. Notice that the `normal' agents are special case of this with $\tau_i = 1$. 
 
-\section{Convergence Analysis} 
+\section{(Preliminary) Convergence Analysis} 
+In this section, we perform a convergence analysis for the proposed opinion dynamics model based on \cite{}. The main result is that we have proved that the opinions will  converge to a (biased) consensus with high probability. As a preliminary observation, we found that the converged opinion will be biased towards the initial opinions of the reluctant agent in expectation. 
 
+We found that our proposed model can be analyzed under the framework of \cite{}, which studied a delayed consensus model. In the analysis, the main idea is to consider an augmented system with a few extra nodes proportional to the maximum delay allowed in the system. As the augmented system is delay-free, it can subsequently be analyzed using the available tools. 
+
+Let us apply the above approach to our model. We consider a directed graph $G' = (V',E')$ where $V'$ contains all the nodes from $V$ together with a few augmented node, defined as follows. 
+
+\section{(Preliminary) Simulation Studies}
 
 
 %We will study how the reluctant agent will affect the consensus result in the model. In the first stage, we will examine (via simulation) the bias introduced by adding reluctant agents. How do topological properties, such as degree distribution, betweenness, and centrality impact the bias? and what about the speed of convergence? These questions will be addressed both analytically and empirically with respect to a few rew relevant network models discussed in class. A concrete result of this work will be a suite of tools for simulating various consensus scenarious on hand of real as well as synthetic data. 

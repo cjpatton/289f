@@ -17,7 +17,8 @@ tau_x([1 2]) = 3; % select the reluctant agents
 the_vector = zeros(N,500);
 
 for monte_carlo = 1 : 500
-x0 = 10*rand(N,1); % Initialize the opinion with some random numbers..
+x0 = 1*rand(N,1); % Initialize the opinion with some random numbers..
+x0(1:2) = 100*rand(2,1);
 x_avg = mean(x0); 
 
 % Init. the algorithms
@@ -136,8 +137,8 @@ for iter_no = 1 : iter_max
 
 end
 
-% fprintf('Sq. Dist to true average (baseline): %f ||',sq_dist_gos(end));
-% fprintf('Sq. Dist to true average (Model1): %f \n',sq_dist_model1(end));
+fprintf('Sq. Dist to true average (baseline): %f ||',sq_dist_gos(end));
+fprintf('Sq. Dist to true average (Model1): %f \n',sq_dist_model1(end));
 % 
 % semilogy(1:iter_max,sq_dist_gos,1:iter_max,sq_dist_model1)
 
