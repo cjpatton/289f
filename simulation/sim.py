@@ -1,6 +1,7 @@
 # sim.py - Simulation of asynchronous consensus models.
 # TODO
-#  - `q` specified in dynamics model, not by agent. 
+#  - Arithmetic on `opnion` over integers for efficiency. 
+#    Write a Agent.GetOpinion() which converts to float. 
 #
 import igraph
 import random
@@ -37,7 +38,9 @@ def Broadcast(g, q):
 #
 
 class Simulation: 
-  
+ 
+  precision = 10 ** 4
+
   def __init__(self, g, agents=None):
     self.g = g
     if agents:
@@ -70,11 +73,11 @@ class Simulation:
     pass
 
   def Run(self, dynamicsModel=SymmetricGossip, g=0.5, rounds=1000):
-    # Run simulation some number of rounds w/o checking for convergence
+    # Run simulation some number of rounds w/o checking 
+    # for convergence. (For efficiency's sake.) 
     for r in range(rounds):
       dynamicsModel(self.g, q) 
     return [ agent.opinion for agent in self.g.vs['agency'] ]
-
 
   def RunUntilConvergence(self, dynamicsModel=SymmetricGossip, q=0.5, max_rounds=1000, err=0.001):
     # Return a tuple (r, W) containing the number of rounds 
@@ -151,6 +154,6 @@ if __name__ == '__main__':
   print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, q=0.5, max_rounds=10000)
 
 
-  style = {}
-  igraph.plot(g, "graph.png", **style)
+  #style = {}
+  #igraph.plot(g, "graph.png", **style)
   

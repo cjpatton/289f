@@ -145,6 +145,16 @@ Let us define $\tilde{\bm A}^{(k)}$ as the overall updating matrix in this stage
 \tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}
 \]
 where $\tilde{\bm A}^{(k)}$ is:
+\[
+\tilde{A}_{ij}^{(k)} = \begin{cases}
+A_{ij}^{(k)} &,~i \in V \setminus V_r, \\
+A_{ij}^{(k)} &,~i = i', \\
+1 &,~i = j~{\rm and}~i \in V_r,\\
+1 &,~i = m + \ell N,~j=m + (\ell-1) N~{\rm for some}~m \in V_r, \\
+1 &,~i = m' + \ell N,~j=m' + (\ell-1) N~{\rm for some}~m \in V_r, \\
+0 &,~{\rm otherwise}.
+\end{cases}
+\]
 
 \section{(Preliminary) Simulation Studies}
 
