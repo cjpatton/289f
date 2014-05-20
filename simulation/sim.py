@@ -1,8 +1,6 @@
 # sim.py - Simulation of asynchronous consensus models.
 # TODO
 #  - RelucatantAgent
-#  - Broadcast()
-#  - Simulation.IterAgents()
 #
 import igraph
 import random
@@ -24,26 +22,26 @@ UNSHIFT = lambda(x) : float(x) / PRECISION
 # opinion when updating. 
 #
 
-def SymmetricGossip(g, q, transaction):
+def SymmetricGossip(g, q, round_no):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
   (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
   opinion = g.vs[u]['agency'].opinion
-  g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, transaction)
-  g.vs[v]['agency'].UpdateOpinion(g.vs[u], opinion, q, transaction)
+  g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, round_no)
+  g.vs[v]['agency'].UpdateOpinion(g.vs[u], opinion, q, round_no)
 
-def AsymmetricGossip(g, q, transaction):
+def AsymmetricGossip(g, q, round_no):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
   u = random.randint(0, g.vcount() - 1) 
   if g.vs[u].degree() > 0:
     v = g.vs[u].neighbors()[random.randint(0, g.vs[u].degree() - 1)].index
-    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, transaction)
+    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, round_no)
 
 def Broadcast(g, q): 
   # Choose a node from `g` uniformly and update its neighbors' opinions. 
   u = g.vs[random.randint(0, g.vcount() - 1)]
   for v in u.neighbors(): 
-    v['agency'].UpdateOpinion(u, u['agency'].opinion, q, transaction)
+    v['agency'].UpdateOpinion(u, u['agency'].opinion, q, round_no)
     
   
 
@@ -86,30 +84,29 @@ class Simulation:
 
   def IterAgents(self): 
     # Return a list of (Vertex, Agent) pairs.
-    pass # TODO 
+    for u in self.g.vs: 
+      yield (u, u['agency'])
 
   def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
     # Run simulation some number of rounds w/o checking 
     # for convergence. (For efficiency's sake.)
     q = SHIFT(q)
-    transaction = 0
     for r in range(rounds):
-      dynamicsModel(self.g, q, transaction) 
-      transaction += 1
+      dynamicsModel(self.g, q, r)
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
   def TimeOfConvergence(self, err=0.0001):
     err = SHIFT(err)
     print "hey, yah!", len(self.g.vs)
-    transactions = []
+    round_nos = []
     for u in range(len(self.g.vs)):
       agent = self.g.vs[u]['agency']
       consensus = agent.opinion
       i = len(agent.history) - 1
       while i >= 0 and abs(agent.history[i][0] - consensus) <= err:
         i -= 1
-      transactions.append(agent.history[i][1])
-    return max(transactions)
+      round_nos.append(agent.history[i][1])
+    return sum(round_nos) / len(round_nos)
 
   def TestConvergence(self, err=0.0001):
     err = SHIFT(err)
@@ -169,9 +166,9 @@ class Agent:
   def GetOpinion(self):
     return UNSHIFT(self.opinion)
 
-  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
+  def UpdateOpinion(self, anAgent, altOpinion, q, round_no): 
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
-    self.history.append((self.opinion, transaction))
+    self.history.append((self.opinion, round_no))
 
 
 class StubbornAgent (Agent): 
@@ -181,8 +178,8 @@ class StubbornAgent (Agent):
   def __init__(self, initialOpinion):
     Agent.__init__(initialOpinion)
 
-  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): 
-    self.history.append((self.opinion, transaction))
+  def UpdateOpinion(self, anAgent, altOpinion, q, round_no): 
+    self.history.append((self.opinion, round_no))
 
 
 def ReluctantAgent (Agent): 
@@ -193,7 +190,7 @@ def ReluctantAgent (Agent):
     Agent.__init__(initialOpinion)
     self.tao = updateRate 
      
-  def UpdateOpinion(self, anAgent, altOpinion, q, transaction): # TODO
+  def UpdateOpinion(self, anAgent, altOpinion, q, round_no): # TODO
     pass
 
 
@@ -210,7 +207,7 @@ if __name__ == '__main__':
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
   #        max_rounds=500000)#rounds=1000000)
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=1000000)
+  sim.Run(dynamicsModel=AsymmetricGossip, q=0.5, rounds=100000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
