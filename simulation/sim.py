@@ -53,9 +53,9 @@ def AsymmetricGossip(g, q, round_no, trigger_list):
 def Broadcast(g, q, round_no, trigger_list): 
   # Choose a node from `g` uniformly and update its neighbors' opinions. 
   u = g.vs[random.randint(0, g.vcount() - 1)]
-  agency = u['agency']
+  agent = u['agency']
   for v in u.neighbors(): 
-    v['agency'].UpdateOpinion(agency, agency.opinion, q, round_no, trigger_list)
+    v['agency'].UpdateOpinion(agent, agent.opinion, q, round_no, trigger_list)
     
   
 
@@ -295,7 +295,7 @@ if __name__ == '__main__':
   #g = igraph.Graph.Barabasi(20, 3)
   #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
-  n = 20; p = 0.3
+  n = 23; p = 0.3
 
   # Graph
   g = igraph.Graph.Erdos_Renyi(n, p)
@@ -303,10 +303,11 @@ if __name__ == '__main__':
   # Agents. 
   agents = [ Agent(1) for i in range(n) ] 
   agents[13] = ReluctantAgent(100, 10)
+  #agents[13] = Agent(10000)
 
   sim = Simulation(g, agents)
   
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100000)
   if sim.TestConvergence():
     print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())

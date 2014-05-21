@@ -1,0 +1,5 @@
+Some random notes on the simulation code.
+
+1. AsymmetricGossip and Broadcast consenus are much more erratic than 
+SymmetricGossip, whether or not a ReluctantAgent is present. So far I've 
+only experimented with small, Erdos-Renyi random graphs. 
