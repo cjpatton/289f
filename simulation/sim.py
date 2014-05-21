@@ -179,8 +179,7 @@ UNSHIFT = lambda(x) : float(x) / PRECISION
 
 class Agent:
 
-  # Standard agent type. Constructor accepts an initial opinion
-  # and `q` in [0 .. 1], the weight of alternative opinions. 
+  # Standard agent type. Constructor accepts an initial opinion.
 
   def __init__(self, initialOpinion):
     self.history = [(SHIFT(initialOpinion), 0)]
@@ -196,6 +195,7 @@ class Agent:
     return UNSHIFT(self.opinion)
 
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
+    # The new opinion is averaged with the old opinion with weight `q`. 
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
     self.history.append((self.opinion, round_no))
 
