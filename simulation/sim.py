@@ -37,7 +37,7 @@ def AsymmetricGossip(g, q, round_no):
     v = g.vs[u].neighbors()[random.randint(0, g.vs[u].degree() - 1)].index
     g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, round_no)
 
-def Broadcast(g, q): 
+def Broadcast(g, q, round_no): 
   # Choose a node from `g` uniformly and update its neighbors' opinions. 
   u = g.vs[random.randint(0, g.vcount() - 1)]
   for v in u.neighbors(): 
@@ -97,7 +97,6 @@ class Simulation:
 
   def TimeOfConvergence(self, err=0.0001):
     err = SHIFT(err)
-    print "hey, yah!", len(self.g.vs)
     round_nos = []
     for u in range(len(self.g.vs)):
       agent = self.g.vs[u]['agency']
@@ -207,7 +206,7 @@ if __name__ == '__main__':
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
   #        max_rounds=500000)#rounds=1000000)
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100000)
+  sim.Run(dynamicsModel=Broadcast, q=0.5, rounds=1000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
