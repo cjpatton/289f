@@ -1,20 +1,39 @@
+###############################################################################
 # sim.py - Simulation of asynchronous consensus models.
-# Chris Patton, chrispatton@gmail.com
-
+#    
+#  Chris Patton (chrispatton@gmail.com), May 2014
+#
+# Suppose we have a graph G = (V, E) and a vector X(0) of length |V| 
+# corresponding to an observation of each node. The nodes attempt to
+# reach consensus by averaging their observations with others'. A 
+# synchronus model of opinion dynamics was first proposed in [DeGroot '74].
+# In this model, opinions are exchanged between all pairs of nodes at each 
+# round. Under mild assumptions, it can be shown that such a system will 
+# reach consensus in finite time, and furthermore, the consensus value and 
+# the time it takes to reach consensus, have a closed form deriviation. 
+# More realisitic models are more complex, however. 
+# 
+# This program simulates various asynchronous consensus models over a 
+# graph. We provide three commonly studied opinion exchange methods
+# [Fagnani '14]: symetric gossip, asymetric gossip, and broadcast. We
+# introduce a novel agent behavior model, which is designed to adapt to 
+# new opinions slower than normal agents. 
+#
+# This program is based on the python-igraph library. 
+#
+###############################################################################
 
 import igraph
 import random
 
 
-
-
 ############# Consensus models ################################################
-
 # Asynchronous opnion dynamics models. Nodes of `g` are expected to have 
 # an `agency` attribute. `q` in [0 .. 1] is the weight of the alternate
 # opinion when updating. 
+###############################################################################
 
-def SymmetricGossip(g, q, round_no, trigger_list):
+def SymetricGossip(g, q, round_no, trigger_list):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
   (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
   u = g.vs[u]['agency']
@@ -23,7 +42,7 @@ def SymmetricGossip(g, q, round_no, trigger_list):
   u.UpdateOpinion(v, v.opinion, q, round_no, trigger_list)
   v.UpdateOpinion(u, opinion, q, round_no, trigger_list)
 
-def AsymmetricGossip(g, q, round_no, trigger_list):
+def AsymetricGossip(g, q, round_no, trigger_list):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
   u = g.vs[random.randint(0, g.vcount() - 1)]
@@ -60,7 +79,7 @@ class Simulation:
                   Agent(random.uniform(0,10)) for i in range(len(g.vs)) ]
 
   def SetOpinionsUnif(self, low, high):
-    # Set opinions by selecting a real value uniformly high and low. 
+    # Set opinions by selecting a real value uniformly between high and low. 
     for agent in self.g.vs['agency']:
       agent.SetOpinion(random.uniform(low, high))
 
@@ -82,9 +101,8 @@ class Simulation:
     for u in self.g.vs: 
       yield (u, u['agency'])
 
-  def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
-    # Run simulation for some number of rounds and return the 
-    # opinion vector. 
+  def Run(self, dynamicsModel=SymetricGossip, q=0.5, rounds=1000):
+    # Run simulation for some number of rounds and return the opinion vector. 
     q = SHIFT(q)
     trigger_list = []
     for r in range(rounds):
@@ -97,11 +115,21 @@ class Simulation:
 
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
+  def TestConvergence(self, err=0.0001):
+    # Test if consenus has been reached. 
+    err = SHIFT(err)
+    for c in self.g.components():
+      W = [ self.g.vs[u]['agency'].opinion for u in c ]
+      if (max(W) - min(W)) > err: 
+        return False
+    return True
+  
   def TimeOfConvergence(self, err=0.0001):
     # Compute the number of rounds until convergence. (Note that the 
     # result isn't valid if consensus hasn't been reached.) Look at
-    # the transaction histories of the node and find the round 
-    # number when their opinion converged to consensus. 
+    # the transaction histories of the nodes and find the round 
+    # number when their opinion converged to consensus. The maximum
+    # of these is the number of rounds until convergence. 
     err = SHIFT(err)
     round_nos = []
     for u in range(len(self.g.vs)):
@@ -113,17 +141,9 @@ class Simulation:
       round_nos.append(agent.history[i][1])
     return max(round_nos)
 
-  def TestConvergence(self, err=0.0001):
-    # Test if consenus has been reached. 
-    err = SHIFT(err)
-    for c in self.g.components():
-      W = [ self.g.vs[u]['agency'].opinion for u in c ]
-      if (max(W) - min(W)) > err: 
-        return False
-    return True
-
   def GetConsensus(self):
-    # Return a list of consensus scores for each component. 
+    # Return a list of consensus scores for each component. (Note 
+    # that the value isn't valid if consensus hasn't been reached.) 
     consensus = []
     for c in self.g.components(): 
       consensus.append(g.vs[c[0]]['agency'].GetOpinion())
@@ -140,10 +160,10 @@ UNSHIFT = lambda(x) : float(x) / PRECISION
 
 
 ############# Agents ##########################################################
-
 # Opinion is typically a real scalar, but can be any type that supports 
 # addition, scalar multiplication and division, min(), max(), int(), and 
 # float(). 
+###############################################################################
 
 class Agent:
 
@@ -181,16 +201,22 @@ class StubbornAgent (Agent):
 
 class ReluctantAgent (Agent): 
 
-  # Reluctant agents. 
+  # Reluctant agents adapt to new opinions slowly, i.e., in `rate` time
+  # steps. When its opinion is updated, it creates a trigger which increments
+  # its opinion by a fixed amount at each round until a counter reaches 
+  # `rate`. A reluctant agent can be adapting to many opinions at the same 
+  # time; to deal with this, the increment is adjusted to adapt to the 
+  # opinion that will *eventually* be reached by the last update trigger.
   
   def __init__(self, initialOpinion, rate):
     Agent.__init__(self, initialOpinion)
     self.rate = rate 
+    self.next_target = self.opinion
      
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
     trigger_list.append(ReluctantTrigger(self, round_no,
-               q * (altOpinion - self.opinion) / (PRECISION * self.rate)))
-
+        q * (altOpinion - self.next_target) / (PRECISION * self.rate)))
+    self.next_target = ((PRECISION - q) * self.next_target + q * altOpinion) / PRECISION
 
 
 ############# Triggers ########################################################
@@ -230,7 +256,7 @@ class ReluctantTrigger (BaseTrigger):
 
 
 
-############# Testing, testing ...  ###########################################
+############# Testing, testing ... ############################################
 
 if __name__ == '__main__': 
   #g = igraph.Graph.Barabasi(20, 3)
@@ -247,7 +273,7 @@ if __name__ == '__main__':
 
   sim = Simulation(g, agents)
   
-  sim.Run(dynamicsModel=Broadcast, q=0.5, rounds=100000)
+  sim.Run(dynamicsModel=SymetricGossip, q=0.5, rounds=1000)
   if sim.TestConvergence():
     print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())
