@@ -16,8 +16,8 @@
 # This program simulates various asynchronous consensus models over a 
 # graph. We provide three commonly studied opinion exchange methods
 # [Fagnani '14]: symmetric gossip, asymmetric gossip, and broadcast. We
-# introduce a novel agent behavior model, which is designed to adapt to 
-# new opinions slower than normal agents. 
+# introduce a novel agent behavior model designed to adapt to new opinions 
+# slower than normal agents. (See ``class ReluctantAgent`` below.) 
 #
 # This program is based on the python-igraph library. 
 #
@@ -106,7 +106,11 @@ class Simulation:
     q = SHIFT(q)
     trigger_list = []
     for r in range(rounds):
+
+      # Run model. 
       dynamicsModel(self.g, q, r, trigger_list)
+      
+      # Process triggers.
       tmp = []
       for trigger in trigger_list:
         if trigger(): 
