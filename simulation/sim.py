@@ -18,7 +18,7 @@ UNSHIFT = lambda(x) : float(x) / PRECISION
 
 #
 # Asynchronous opnion dynamics models. Nodes of `g` are expected to have 
-# an `Agent` attribute. `q` in [0 .. 1] is the weight of the alternate
+# an `agency` attribute. `q` in [0 .. 1] is the weight of the alternate
 # opinion when updating. 
 #
 
@@ -32,10 +32,10 @@ def SymmetricGossip(g, q, round_no):
 def AsymmetricGossip(g, q, round_no):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
-  u = random.randint(0, g.vcount() - 1) 
-  if g.vs[u].degree() > 0:
-    v = g.vs[u].neighbors()[random.randint(0, g.vs[u].degree() - 1)].index
-    g.vs[u]['agency'].UpdateOpinion(g.vs[v], g.vs[v]['agency'].opinion, q, round_no)
+  u = g.vs[random.randint(0, g.vcount() - 1)]
+  if u.degree() > 0:
+    v = u.neighbors()[random.randint(0, u.degree() - 1)]
+    u['agency'].UpdateOpinion(v, v['agency'].opinion, q, round_no)
 
 def Broadcast(g, q, round_no): 
   # Choose a node from `g` uniformly and update its neighbors' opinions. 
@@ -96,6 +96,10 @@ class Simulation:
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
   def TimeOfConvergence(self, err=0.0001):
+    # Compute the number of rounds until convergence. (Note that the 
+    # result isn't valid if consensus hasn't been reached.) Look at
+    # the transaction histories of the node and find the round 
+    # number when their opinion converged to consensus. 
     err = SHIFT(err)
     round_nos = []
     for u in range(len(self.g.vs)):
@@ -108,6 +112,7 @@ class Simulation:
     return max(round_nos)
 
   def TestConvergence(self, err=0.0001):
+    # Test if consenus has been reached. 
     err = SHIFT(err)
     for c in self.g.components():
       W = [ self.g.vs[u]['agency'].opinion for u in c ]
@@ -144,7 +149,8 @@ class Simulation:
 
 #
 # Agents. Opinion is typically a real scalar, but can be any type 
-# that supports addition and scalar multiplication.
+# that supports addition, scalar multiplication and division, min(), 
+# max(), and int(). 
 #
 
 class Agent:
@@ -206,7 +212,7 @@ if __name__ == '__main__':
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
   #        max_rounds=500000)#rounds=1000000)
-  sim.Run(dynamicsModel=Broadcast, q=0.5, rounds=1000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
