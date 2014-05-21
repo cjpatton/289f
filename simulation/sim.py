@@ -106,7 +106,7 @@ class Simulation:
       while i >= 0 and abs(agent.history[i][0] - consensus) <= err:
         i -= 1
       round_nos.append(agent.history[i][1])
-    return sum(round_nos) / len(round_nos)
+    return max(round_nos)
 
   def TestConvergence(self, err=0.0001):
     err = SHIFT(err)
@@ -207,7 +207,7 @@ if __name__ == '__main__':
   #print sim.RunUntilConvergence(dynamicsModel=AsymmetricGossip, 
   #        q=0.5, 
   #        max_rounds=500000)#rounds=1000000)
-  sim.Run(dynamicsModel=AsymmetricGossip, q=0.5, rounds=100000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100000)
   print sim.TestConvergence()
   print sim.TimeOfConvergence()
 
