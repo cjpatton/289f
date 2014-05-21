@@ -225,7 +225,18 @@ To summarize, we can now write the opinion dynamics as:
 \]
 where $\bar{\bm A}^{(k)} = \tilde{\bm A}^{(k')}  \tilde{\bm A}^{(k)}$ is a stochastic matrix for all $k$. 
 
-Given the above model, we are interested in proving its convergence property. It turns out that the result is not trivial to obtain. In particular, the main challenge is that the update matrix $\bar{\bm A}^{(k)}$ is correlated with its previous realizations, e.g., $\bar{\bm A}^{(k-1)}, ..., \bar{\bm A}^{(1)}$. However, using a recent result from \cite{}, we are able to prove to following. 
+Given the above model, we are interested in proving its convergence property. It turns out that the result is not trivial to obtain. In particular, the main challenge is that the update matrix $\bar{\bm A}^{(k)}$ is correlated with its previous realizations, e.g., $\bar{\bm A}^{(k-1)}, ..., \bar{\bm A}^{(1)}$. 
+%However, using a recent result from \cite{}, we are able to prove to following. 
+
+To prove the main result of the convergence analysis, we apply a recent result from \cite{}. Let us define 
+\[
+\bm{\Phi} (s+t,s) = \bar{\bm A}^{(s+t)}  \bar{\bm A}^{(s+t-1)} \ldots  \bar{\bm A}^{(s)}
+\]
+We claim that there exists an $\eta, t > 0$ such that:
+\[
+E \left( [\Phi (k+t,k)]_{ij} | \mathcal{F}_{k} \right) \geq \eta E \left( [\Phi (k+t,k)]_{ji} | \mathcal{F}_{k} \right),~\forall~k
+\]
+%The result can be applied as follows. 
 
 %To obtain the desired result, we observe  that if ${\bm A}^{(k)}$ is stochastic, then $\tilde{\bm A}^{(k)}$ is also stochastic. To summarize, we have:
 %\begin{prop}

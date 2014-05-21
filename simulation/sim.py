@@ -15,7 +15,7 @@
 # 
 # This program simulates various asynchronous consensus models over a 
 # graph. We provide three commonly studied opinion exchange methods
-# [Fagnani '14]: symetric gossip, asymetric gossip, and broadcast. We
+# [Fagnani '14]: symmetric gossip, asymmetric gossip, and broadcast. We
 # introduce a novel agent behavior model, which is designed to adapt to 
 # new opinions slower than normal agents. 
 #
@@ -33,7 +33,7 @@ import random
 # opinion when updating. 
 ###############################################################################
 
-def SymetricGossip(g, q, round_no, trigger_list):
+def SymmetricGossip(g, q, round_no, trigger_list):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
   (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
   u = g.vs[u]['agency']
@@ -42,7 +42,7 @@ def SymetricGossip(g, q, round_no, trigger_list):
   u.UpdateOpinion(v, v.opinion, q, round_no, trigger_list)
   v.UpdateOpinion(u, opinion, q, round_no, trigger_list)
 
-def AsymetricGossip(g, q, round_no, trigger_list):
+def AsymmetricGossip(g, q, round_no, trigger_list):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
   u = g.vs[random.randint(0, g.vcount() - 1)]
@@ -101,12 +101,20 @@ class Simulation:
     for u in self.g.vs: 
       yield (u, u['agency'])
 
-  def Run(self, dynamicsModel=SymetricGossip, q=0.5, rounds=1000):
+  def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
     # Run simulation for some number of rounds and return the opinion vector. 
     q = SHIFT(q)
     trigger_list = []
     for r in range(rounds):
       dynamicsModel(self.g, q, r, trigger_list)
+      tmp = []
+      for trigger in trigger_list:
+        if trigger(): 
+          tmp.append(trigger)
+      trigger_list = tmp
+
+    # Finnish off triggers. 
+    while len(trigger_list) > 0:
       tmp = []
       for trigger in trigger_list:
         if trigger(): 
@@ -204,19 +212,40 @@ class ReluctantAgent (Agent):
   # Reluctant agents adapt to new opinions slowly, i.e., in `rate` time
   # steps. When its opinion is updated, it creates a trigger which increments
   # its opinion by a fixed amount at each round until a counter reaches 
-  # `rate`. A reluctant agent can be adapting to many opinions at the same 
-  # time; to deal with this, the increment is adjusted to adapt to the 
-  # opinion that will *eventually* be reached by the last update trigger.
+  # `rate`. A reluctant agent can adapt to many opinions at the same time. 
+  # Here, a trigger is created based on the current opinion, regardlesss
+  # of other triggers currently running.  
   
   def __init__(self, initialOpinion, rate):
     Agent.__init__(self, initialOpinion)
     self.rate = rate 
+     
+  def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
+    trigger_list.append(ReluctantTrigger(self, round_no,
+        q * (altOpinion - self.opinion) / (PRECISION * self.rate)))
+
+
+class SimultReluctantAgent (ReluctantAgent): 
+
+  # This reluctant agent deals with the simultaneous trigger problem by 
+  # adjusting the increment value to adapt to the opinion that will 
+  # *eventually* be reached by the previous update trigger. The idea 
+  # is that this is equevalent to queuing the new opinions, but occurs
+  # simultaneously. 
+  
+  def __init__(self, initialOpinion, rate):
+    ReluctantAgent.__init__(self, initialOpinion, rate)
     self.next_target = self.opinion
      
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
     trigger_list.append(ReluctantTrigger(self, round_no,
         q * (altOpinion - self.next_target) / (PRECISION * self.rate)))
     self.next_target = ((PRECISION - q) * self.next_target + q * altOpinion) / PRECISION
+
+class QueuingReluctantAgent (ReluctantAgent): 
+  
+  pass # TODO SimultReluctantAgent frequently diverges. Try serializing 
+       # the updates here.
 
 
 ############# Triggers ########################################################
@@ -273,7 +302,7 @@ if __name__ == '__main__':
 
   sim = Simulation(g, agents)
   
-  sim.Run(dynamicsModel=SymetricGossip, q=0.5, rounds=1000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
   if sim.TestConvergence():
     print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())
