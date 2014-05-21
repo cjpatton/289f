@@ -99,7 +99,14 @@ We consider an undirected graph $G = (V,E)$ with $|V| = n$. Each agent $i \in V$
 \begin{equation}\label{eq:op}
 \hat{\bm w}_i^{(k)} = \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} {\bm w}_j^{(k-1)},
 \end{equation}
-where $0 \leq A_{ij}^{(k)} \leq 1$ models the trust agent $i$ has on agent $j$ at time $k$. Importantly, we assume $\sum_{j=1}^{|V|} A_{ij}^{(k)} = 1$ and $\sum_{i=1}^{|V|} A_{ij}^{(k)} = 1$. Notice that the matrix ${\bm A}^{(k)}$ is time-variant. 
+where $0 \leq A_{ij}^{(k)} \leq 1$ models the trust agent $i$ has on agent $j$ at time $k$. Importantly, we assume $\sum_{j=1}^{|V|} A_{ij}^{(k)} = 1$ and $\sum_{i=1}^{|V|} A_{ij}^{(k)} = 1$. Notice that the matrix ${\bm A}^{(k)}$ is time-variant and it is randomly generated at each $k$. 
+
+In the subsequent analysis, we shall focus on the so-called \emph{randomized gossip model} \cite{}. The mixing matrix ${\bm A}^{(k)}$ is given as:
+\[
+{\bm A}^{(k)} = {\bf I} - \frac{1}{2} ({\bf e}_i + {\bf e}_j) ({\bf e}_i + {\bf e}_j)^T,
+\]
+where $(i,j) \in E$ is an edge of $E$ selected uniformly at time $k$. The model represents the scenario when agents communicate by `gossiping', i.e., at each time there can only be two agents exchanging idea with each other. 
+
 
 The vector $\hat{\bm w}_i^{(k)}$ is the opinion that agent $i$ is supposed to hold at time $k$. In DeGroot's model, the agents are updating instantly such that ${\bm w}_i^{(k)} = \hat{\bm w}_i^{(k)} $. In this case, it is known that ${\bm w}_i^{(k)}$ converges to the average of $\{{\bm w}_i^{(0)} \}$ asymptotically, i.e., achieving the `wisdom of the crowd',  under some mild assumptions. 
 However, in our model, some agents are reluctant such that they don't update \emph{immediately}. Instead, ${\bm w}_i^{(k)}$ is updated by:
@@ -116,16 +123,21 @@ c_i^{(k-1)} + 1 &,~{\rm otherwise}.
 is a counter variable and $\tau_i \in \mathbb{Z}$ is the adaptation rate of $i$. In other words, the reluctant agent will slowly adapt to the new opinion in $\tau_i$ time steps. Notice that the `normal' agents are special case of this with $\tau_i = 1$. 
 
 \section{(Preliminary) Convergence Analysis} 
-In this section, we perform a convergence analysis for the proposed opinion dynamics model based on \cite{}. The main result (so far) is that we have proved that the opinions will  converge to a (biased) consensus with high probability. As a preliminary observation, we found that the converged opinion will be biased towards the initial opinions of the reluctant agent in expectation. 
+In this section, we perform a convergence analysis for the proposed opinion dynamics model using randomized gossip exchange. 
+The main result (so far) is that we can establish that the opinions will  converge to a (biased) consensus almost surely. 
+As a preliminary observation, we found that the converged opinion will be biased towards the initial opinions of the reluctant agent in expectation. 
 
-We found that our proposed model can be analyzed under the framework of \cite{}, which studied a delayed consensus model. Specifically, \cite{} considered an augmented system with a few extra nodes proportional to the maximum delay allowed in the system. The augmented system is delay-free and it can subsequently be analyzed using the available tools. 
-
-Let us apply the above approach to our model. We consider a directed graph $G' = (V',E')$ where $V'$ contains all the nodes from $V$ together with a few augmented node, defined as follows. For each $i \in V_r$, we define $1 + 2(\tau_i - 1)$ new nodes denoted by $\{ i' \} \cup \{i + N, ..., i + (\tau_i-1)N\} \cup \{ i'+N, ..., i' + (\tau_i-1)N\}$. Here, the $i'$th node stores the value of $\hat{\bm w}_i^{(k)}$. The nodes $\{i + N, ..., i + (\tau_i-1)N\}$ and $\{ i'+N, ..., i' + (\tau_i-1)N\}$ stores the delayed version of ${\bm w}_i$ and $\hat{\bm w}_i$, respectively. The inter-connectivity of these nodes are best illustrated by the example in Fig.~\ref{fig:augment}. 
+%We propose to analyze our model under the framework of \cite{}. The latter reference has studied a delayed consensus model by considering an augmented system with a few extra nodes that models the delay in the system. The augmented system is delay-free and it can subsequently be analyzed. 
+Our analysis is inspired by \cite{} and applies the result in \cite{}. Specifically, we introduce the augmented nodes such that the reluctant opinion dynamics model can be recast into the simple form of 
+\[
+\tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)}
+\]
+To this end, let us consider a directed graph $G' = (V',E')$ where $V'$ contains all the nodes from $V$ together with a few augmented node, defined as follows. For each $i \in V_r$, we define $2$ new nodes denoted by $\{ i', i'' \}$. Here, the $i'$th node stores the value of $\hat{\bm w}_i^{(k)}$ and the $i''$th node stores the value of old ${\bm w}_i^{(k)}$. The inter-connectivity of these nodes are best illustrated by the example in Fig.~\ref{fig:augment}. 
 
 \begin{figure}[t]
-\centerline{\resizebox{.55\textwidth}{!}{\includegraphics{./augmented_graph}}
+\centerline{\resizebox{.5\textwidth}{!}{\includegraphics{./augmented_graph}}
 }
-\caption{Example of the augmented system. Here, $V_r = \{1\}$ and $\tau_1 = 3$. 
+\caption{Example of the augmented system for $V_r = \{1\}$. 
 } \label{fig:augment}
 \end{figure}
 
@@ -137,60 +149,95 @@ Let $\tilde{ \bm w}_i$ be the opinion held by agent $i$ in the augmented system,
 c_i^{(0)} = M,~\forall~ i \in V'~{\rm and}~\tilde{ \bm w}_i^{(0)} = \begin{cases} { \bm w}_i^{(0)} &,~i \in V \\
  {\bf 0} &,~i \in V' \setminus V, \end{cases}
 \]
-where $M > \tau_i$ for all $i$ denotes that all the reluctant agents are not in the process of adapting to a new opinion. 
+where $M > \tau_i$ for all $i$ enforces a `reset' state for the adaptation process with reluctant agents. 
 
 \textbf{Updating stage}: At the \emph{updating} stage, we have that 
 \[
 \tilde{\bm w}_i^{(k)} = \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'},~i \in V \setminus V_r,
 \]
-i.e., the non-reluctant agents are updated instantaneously. Moreover, the updated opinion will be stored in the $i'$th node if $i$ is a reluctant agent:
+i.e., the non-reluctant agents are updated immediately. 
+As for node $i \in V_r$, we have $$\tilde{\bm w}_i^{(k)} = \tilde{\bm w}_i^{(k-1)'}$$ such that it is left intact. 
+For node $i'$ where $i \in V_r$, we have:
 \[
-\tilde{\bm w}_{i'}^{(k)} = \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'},~i \in  V_r,
-\]
-The opinions at the other augmented nodes are updated as follows:
-\[
-\tilde{\bm w}_{i+j N}^{(k)} = \tilde{\bm w}_{i + (j-1)N}^{(k-1)'},~j=1,...,\tau_i - 1,~i \in V_r,
-\]
-\[
-\tilde{\bm w}_{i' +j N}^{(k)} = \tilde{\bm w}_{i' + (j-1)N}^{(k-1)'},~j=1,...,\tau_i - 1,~i \in V_r.
-\]
-To summarize, let us define $\tilde{\bm A}^{(k)}$ as the updating matrix in this stage, we have:
-\[
-\tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}
-\]
-where $\tilde{\bm A}^{(k)}$ is:
-\begin{equation} \label{eq:a_update}
-\tilde{A}_{ij}^{(k)} = \begin{cases}
-A_{ij}^{(k)} &,~i \in V \setminus V_r, \\
-A_{ij}^{(k)} &,~i = i', \\
-1 &,~i = j~{\rm and}~i \in V_r,\\
-1 &,~i = m + \ell N,~j=m + (\ell-1) N~{\rm for~some}~m \in V_r, \\
-1 &,~i = m' + \ell N,~j=m' + (\ell-1) N~{\rm for~some}~m \in V_r, \\
-0 &,~{\rm otherwise}.
+\tilde{\bm w}_{i'}^{(k)} = \begin{cases}
+\displaystyle \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}&,~{\rm if}~c_i^{(k)} = 1. \\
+\tilde{\bm w}_{i'}^{(k-1)'}&,~{\rm otherwise},
 \end{cases}
-\end{equation}
+\]
+and for node $i''$ where $i \in V_r$, 
+\[
+\tilde{\bm w}_{i''}^{(k)} = \begin{cases}
+\tilde{\bm w}_{i}^{(k-1)'}&,~{\rm if}~c_i^{(k)} = 1. \\
+\tilde{\bm w}_{i''}^{(k-1)'}&,~{\rm otherwise}.
+\end{cases}
+\]
+The two equations above describes the opinion dynamics that when the counter variable $c_i^{(k)}$ is reset, then the stored variables will be updated. 
 
-\textbf{Adaptation stage}: At the \emph{adaptation} stage, the non-reluctant agents and the augmented nodes will remain stationary, i.e.,
+Let us define $\tilde{\bm A}^{(k)}$ as the overall updating matrix in this stage, i.e., we have:
+\[
+\tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}.
+\]
+It can be verified that $\tilde{\bm A}^{(k)}$ is stochastic. 
+
+%Moreover, the updated opinion will be stored in the $i'$th node if $i$ is a reluctant agent:
+%\[
+%\tilde{\bm w}_{i'}^{(k)} = \sum_{j \in \mathcal{N}_i} A_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'},~i \in  V_r,
+%\]
+%The opinions at the other augmented nodes are updated as follows:
+%\[
+%\tilde{\bm w}_{i+j N}^{(k)} = \tilde{\bm w}_{i + (j-1)N}^{(k-1)'},~j=1,...,\tau_i - 1,~i \in V_r,
+%\]
+%\[
+%\tilde{\bm w}_{i' +j N}^{(k)} = \tilde{\bm w}_{i' + (j-1)N}^{(k-1)'},~j=1,...,\tau_i - 1,~i \in V_r.
+%\]
+%To summarize, let us define $\tilde{\bm A}^{(k)}$ as the updating matrix in this stage, we have:
+%\[
+%\tilde{\bm w}_i^{(k)} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k)} \tilde{\bm w}_j^{(k-1)'}
+%\]
+%where $\tilde{\bm A}^{(k)}$ is:
+%\begin{equation} \label{eq:a_update}
+%\tilde{A}_{ij}^{(k)} = \begin{cases}
+%A_{ij}^{(k)} &,~i \in V \setminus V_r, \\
+%A_{ij}^{(k)} &,~i = i', \\
+%1 &,~i = j~{\rm and}~i \in V_r,\\
+%1 &,~i = m + \ell N,~j=m + (\ell-1) N~{\rm for~some}~m \in V_r, \\
+%1 &,~i = m' + \ell N,~j=m' + (\ell-1) N~{\rm for~some}~m \in V_r, \\
+%0 &,~{\rm otherwise}.
+%\end{cases}
+%\end{equation}
+
+\textbf{Adaptation stage}: At the \emph{adaptation} stage, the non-reluctant agents and the augmented nodes will remain unchanged, i.e.,
 \[
 \tilde{\bm w}_i^{(k')} = \tilde{\bm w}_i^{(k)},~i \in V' \setminus V_r.
 \]
-Instead, the opinion of the reluctant agent will be adapted using information from the counter variable as follows:
+However, the opinion of the reluctant agent will be adapted using the stored information in node $i'$ and $i''$:
 \[
 \tilde{\bm w}_i^{(k')} = \begin{cases}
-\displaystyle \frac{c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i' + (c_i^{(k)}-1)N}^{(k)} + \frac{\tau_i - c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i + c_i^{(k)}N}^{(k)} &,~{\rm if}~c_i^{(k)} \leq \tau_i, \vspace{.2cm} \\
+\displaystyle \frac{c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i'}^{(k)} + \frac{\tau_i - c_i^{(k)}}{\tau_i} \tilde{\bm w}_{i''}^{(k)} &,~{\rm if}~c_i^{(k)} \leq \tau_i, \vspace{.2cm} \\
 \tilde{\bm w}_i^{(k)} &,~{\rm otherwise}.
 \end{cases}
 \]
-With some efforts, the dynamics described above can also be written using an update matrix $\tilde{\bm A}^{(k')}$ as in the above. 
+With some efforts, the dynamics described above can also be written using an update matrix $\tilde{\bm A}^{(k')}$. Such $\tilde{\bm A}^{(k')}$ is also found to be stochastic.
 
-To obtain our main result about the convergence of the proposed model, we observe  that both $\tilde{\bm A}^{(k)}$ and $\tilde{\bm A}^{(k')}$ are stochastic as long as ${\bm A}^{(k)}$ is. To summarize, we have:
-\begin{prop}
-Assuming that $\{ A_{ij}^{(k)} \}$ constitutes a sequence of opinion updates that lead to  consensus in the DeGroot's model as $k \rightarrow \infty$, then the opinions in reluctant updates model will also reach a consensus  as $k \rightarrow \infty$. In other words, we have
+To summarize, we can now write the opinion dynamics as:
 \[
-\lim_{k \rightarrow \infty} \prod_{\ell=1}^{k} \tilde{\bm A}^{(\ell')} \tilde{\bm A}^{(\ell)} = {\bf 1} ({\bm \pi}^\star)^T,
+\tilde{\bm w}_i^{(k')} = \sum_{j=1}^{|V'|} \tilde{A}_{ij}^{(k')} \sum_{\ell=1}^{|V'|} \tilde{A}_{j \ell}^{(k)} \tilde{\bm w}_{\ell}^{(k-1)'} =  \sum_{j=1}^{|V'|} \bar{A}_{ij}^{(k)} \tilde{\bm w}_{\ell}^{(k-1)'},
 \]
-for some ${\bm \pi}^\star \in \mathbb{R}^{|V'|}$
-\end{prop}
+where $\bar{\bm A}^{(k)} = \tilde{\bm A}^{(k')}  \tilde{\bm A}^{(k)}$ is a stochastic matrix for all $k$. 
+
+Given the above model, we are interested in proving its convergence property. It turns out that the result is not trivial to obtain. In particular, the main challenge is that the update matrix $\bar{\bm A}^{(k)}$ is correlated with its previous realizations, e.g., $\bar{\bm A}^{(k-1)}, ..., \bar{\bm A}^{(1)}$. However, using a recent result from \cite{}, we are able to prove to following. 
+
+%To obtain the desired result, we observe  that if ${\bm A}^{(k)}$ is stochastic, then $\tilde{\bm A}^{(k)}$ is also stochastic. To summarize, we have:
+%\begin{prop}
+%%Assuming that $\{ {\bm A}^{(k)} \}$ constitutes a sequence of opinion updates that lead to  consensus in the DeGroot's model as $k \rightarrow \infty$, then 
+%The opinions in reluctant updates model reach consensus in the expectation as $k \rightarrow \infty$. We have
+%\[
+%\lim_{k \rightarrow \infty} E \left\{ \prod_{\ell=1}^{k} \tilde{\bm A}^{(\ell')} \tilde{\bm A}^{(\ell)} \right\} = {\bf 1} ({\bm \pi}^\star)^T,
+%\]
+%for some ${\bm \pi}^\star \in \mathbb{R}^{|V'|}$.
+%\end{prop}
+
+\subsection{Insights from the analysis (empirical)}
 
 \section{(Preliminary) Simulation Studies}
 

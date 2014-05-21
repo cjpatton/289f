@@ -18,11 +18,16 @@ the_vector = zeros(N,500);
 
 for monte_carlo = 1 : 500
 x0 = 1*rand(N,1); % Initialize the opinion with some random numbers..
-x0(1:2) = 100*rand(2,1);
+x0(1:2) = 10*rand(2,1);
 x_avg = mean(x0); 
 
+
+% recip_vec = 0.1 ./ [ 0.1171 0.1166 0.0959 0.0954 0.0954 0.0958 0.0954 0.0956 0.0968 0.0960 ];
+recip_vec = ones(1,N);
+
 % Init. the algorithms
-x_gossip = x0; x_model1 = x0; xh_model1 = x0; xo_model1 = x0;
+x_gossip = x0; x_model1 = x0.*recip_vec'; 
+xh_model1 = x0.*recip_vec'; xo_model1 = x0.*recip_vec';
 
 x_augmented = zeros(N-2 + 4 + (3-1)*2*2,1); x_augmented(1:N) = x0; 
 % only deal with the 2 reluctant agents w/ tau = 3 case
@@ -36,6 +41,7 @@ cnt_anal = 100*ones(N,1);
 
 cnt_xh = ones(N,1);
 sq_dist_gos = zeros(iter_max,1); sq_dist_model1 = sq_dist_gos;
+sq_dist_augm = sq_dist_gos;
 
 for iter_no = 1 : iter_max
     % A random node wake up at this time
@@ -134,11 +140,15 @@ for iter_no = 1 : iter_max
     A_accum(:,:,2*iter_no) = A_current;
     
     x_augmented = A_current*x_augmented;
+    
+    % eval. the squared distance now
+    sq_dist_augm(iter_no) = sqrt(sum( (x_augmented(1:N)-x_avg).^2 ));
 
 end
 
-fprintf('Sq. Dist to true average (baseline): %f ||',sq_dist_gos(end));
-fprintf('Sq. Dist to true average (Model1): %f \n',sq_dist_model1(end));
+fprintf('Sq. Dist (baseline): %f ||',sq_dist_gos(end));
+fprintf('Sq. Dist (Model1): %f ||',sq_dist_model1(end));
+fprintf('Sq. Dist (Augment): %f \n',sq_dist_augm(end));
 % 
 % semilogy(1:iter_max,sq_dist_gos,1:iter_max,sq_dist_model1)
 
@@ -150,10 +160,62 @@ end
 
 the_vector(:,monte_carlo) = A_recursive(1,1:N);
 
+A_sum = zeros(length(x_augmented));
+for iter_no = 1 : iter_max
+    A_sum = A_sum + A_accum(:,:,2*iter_no)*A_accum(:,:,2*iter_no-1);
+end
+
 
 % recip = [0.8587 0.8507 1.0479 1.0498 1.0365 1.0513 1.0354 1.0449 1.0527 1.0372];
-recip = 0.1 ./ the_vector(:,monte_carlo)';
-x_corrected = mean( recip.* x_model1' );
+% recip = 0.1 ./ the_vector(:,monte_carlo)';
+% x_corrected = mean( recip.* x_model1' );
+
+% compute the E(A^(k'))
+% A_tmp = zeros(length(x_augmented));
+% vec_hardcode = zeros(9,2);
+% vec_hardcode(:,1) = kron(ones(3,1),[10; 1; 2;]);
+% vec_hardcode(:,2) = kron([10; 1; 2;],ones(3,1));
+% probab_hardcode = [0.6400; 0.2000; 0.1600];
+% probab_hardcode = kron(probab_hardcode,probab_hardcode);
+% for iii = 1 : size(vec_hardcode,1)
+%     A_current = eye(length(x_augmented));
+%     if vec_hardcode(iii,1) == 1
+%         A_current(1,1) = 0;
+%         A_current(1,N+1) = 1/3; A_current(1,N+2+(1-1)*4+1) = 2/3;
+%     elseif vec_hardcode(iii,1) == 2
+%         A_current(1,1) = 0;
+%         A_current(1,N+2+(1-1)*4+3) = 2/3;
+%         A_current(1,N+2+(1-1)*4+2) = 1/3;
+%     elseif vec_hardcode(iii,1) == 3
+%         A_current(1,1) = 0;
+%         A_current(1,N+2+(1-1)*4+4) = 1;
+%     end
+%     
+%     if vec_hardcode(iii,2) == 1
+%         A_current(2,2) = 0;
+%         A_current(2,N+2) = 1/3; A_current(2,N+2+(2-1)*4+1) = 2/3;
+%     elseif vec_hardcode(iii,2) == 2
+%         A_current(2,2) = 0;
+%         A_current(2,N+2+(2-1)*4+3) = 2/3;
+%         A_current(2,N+2+(2-1)*4+2) = 1/3;
+%     elseif vec_hardcode(iii,2) == 3
+%         A_current(2,2) = 0;
+%         A_current(2,N+2+(2-1)*4+4) = 1;
+%     end
+%     A_tmp = A_tmp + probab_hardcode(iii)*A_current;
+% end
+% A_prime = A_tmp;
+% 
+% % Now we deal with E(A^{k))
+% A_current = eye(length(x_augmented)); A_current(N+3:end,:) = A_const;
+% A_current(1:N,1:N) = (1/(N*(N-1)))*ones(N) + (1-(1/N)-(1/(N*(N-1))))*diag(ones(N,1));
+% A_current(N+1,:) = A_current(1,:); 
+% A_current(N+2,:) = A_current(2,:);
+% A_current(1,:) = 0; A_current(1,1) = 1;
+% A_current(2,:) = 0; A_current(2,2) = 1;
+% 
+% A_result = A_prime*A_current;
+
 
 
 end
