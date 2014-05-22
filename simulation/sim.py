@@ -279,7 +279,7 @@ class UnbiasedReluctantAgent (Agent):
         q * (altOpinion - self.opinion) / (PRECISION * self.rate)))
 
 
-class SimultReluctantAgent (ReluctantAgent): 
+class SimultReluctantAgent (UnbiasedReluctantAgent): 
 
   # This reluctant agent deals with the simultaneous trigger problem by 
   # adjusting the increment value to adapt to the opinion that will 
@@ -297,7 +297,7 @@ class SimultReluctantAgent (ReluctantAgent):
     self.next_target = ((PRECISION - q) * self.next_target + q * altOpinion) / PRECISION
 
 
-class QueuingReluctantAgent (ReluctantAgent): 
+class QueuingReluctantAgent (UnbiasedReluctantAgent): 
   
   pass # TODO SimultReluctantAgent frequently diverges. Try serializing 
        # the updates here.
