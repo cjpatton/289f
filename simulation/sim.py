@@ -254,7 +254,7 @@ class ReluctantAgent (Agent):
 
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
     if self.curr_trigger:
-      self.curr_trigger.kill()
+      self.curr_trigger.Kill()
     self.curr_trigger = ReluctantTrigger(self, round_no,
         q * (altOpinion - self.opinion) / (PRECISION * self.rate))
     trigger_list.append(self.curr_trigger)
@@ -329,7 +329,7 @@ class ReluctantTrigger (BaseTrigger):
     self.count = 0
     self._kill = False
 
-  def kill(self):
+  def Kill(self):
     self._kill = True
 
   def __call__(self):
