@@ -288,7 +288,7 @@ class SimultReluctantAgent (UnbiasedReluctantAgent):
   # simultaneously. 
   
   def __init__(self, initialOpinion, rate):
-    ReluctantAgent.__init__(self, initialOpinion, rate)
+    UnbiasedReluctantAgent.__init__(self, initialOpinion, rate)
     self.next_target = self.opinion
      
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
