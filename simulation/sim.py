@@ -33,6 +33,21 @@ import random
 # opinion when updating. 
 ###############################################################################
 
+def TestGossip(g, q, round_no, trigger_list): 
+  # G should be a complete, 5 node grpah.
+  (u, v) = TestGossip.b[TestGossip.samba]
+  u -= 1; v -= 1
+  TestGossip.samba = (TestGossip.samba + 1) % 10
+  u = g.vs[u]['agency']
+  v = g.vs[v]['agency']
+  opinion = u.opinion
+  u.UpdateOpinion(v, v.opinion, q, round_no, trigger_list)
+  v.UpdateOpinion(u, opinion, q, round_no, trigger_list)
+
+TestGossip.samba = 0; 
+TestGossip.b = [(1,2), (2,3), (3,4), (1,5), (2,4), (3,4), (4,5), (2,3), (3,5), (4,5)] 
+  
+
 def SymmetricGossip(g, q, round_no, trigger_list):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
   (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
@@ -71,6 +86,8 @@ class Simulation:
  
   def __init__(self, g, agents=None):
     self.g = g
+    self.debug_trigger_list = []
+    self.debug_round_no = 0
     if agents:
       assert len(agents) == len(g.vs)
       self.g.vs['agency'] = agents
@@ -127,6 +144,17 @@ class Simulation:
 
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
+  def RunDebug(self, dynamicsModel=SymmetricGossip, q=0.5):
+    q = SHIFT(q)
+    dynamicsModel(self.g, q, self.debug_round_no, self.debug_trigger_list)
+    tmp = []
+    for trigger in self.debug_trigger_list:
+      if trigger(): 
+        tmp.append(trigger)
+    self.debug_trigger_list = tmp
+    self.debug_round_no += 1
+    return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
+    
   def TestConvergence(self, err=0.0001):
     # Test if consenus has been reached. 
     err = SHIFT(err)
@@ -212,20 +240,41 @@ class StubbornAgent (Agent):
 
 
 class ReluctantAgent (Agent): 
+  
+  # Reluctant agents adapt to new opinions slowly, i.e., in `rate` time
+  # steps. When its opinion is updated, it creates a trigger which increments
+  # its opinion by a fixed amount at each round until a counter reaches 
+  # `rate`. When a new trigger arrives, delete the old one.   
+  
+  def __init__(self, initialOpinion, rate):
+    Agent.__init__(self, initialOpinion)
+    self.rate = rate 
+    self.curr_trigger = None
+
+  def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
+    if self.curr_trigger:
+      self.curr_trigger.kill()
+    self.curr_trigger = ReluctantTrigger(self, round_no,
+        q * (altOpinion - self.opinion) / (PRECISION * self.rate))
+    trigger_list.append(self.curr_trigger)
+
+
+class UnbiasedReluctantAgent (Agent): 
 
   # Reluctant agents adapt to new opinions slowly, i.e., in `rate` time
   # steps. When its opinion is updated, it creates a trigger which increments
   # its opinion by a fixed amount at each round until a counter reaches 
   # `rate`. A reluctant agent can adapt to many opinions at the same time. 
   # Here, a trigger is created based on the current opinion, regardlesss
-  # of other triggers currently running.  
+  # of other triggers currently running. TODO With Erdos-Renyi graphs with 
+  # SymmetricGossip, result seems to be unbiased. Verify this analytically. 
   
   def __init__(self, initialOpinion, rate):
     Agent.__init__(self, initialOpinion)
     self.rate = rate 
      
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list):
-    trigger_list.append(ReluctantTrigger(self, round_no,
+    trigger_list.append(UnbiasedReluctantTrigger(self, round_no,
         q * (altOpinion - self.opinion) / (PRECISION * self.rate)))
 
 
@@ -245,6 +294,7 @@ class SimultReluctantAgent (ReluctantAgent):
     trigger_list.append(ReluctantTrigger(self, round_no,
         q * (altOpinion - self.next_target) / (PRECISION * self.rate)))
     self.next_target = ((PRECISION - q) * self.next_target + q * altOpinion) / PRECISION
+
 
 class QueuingReluctantAgent (ReluctantAgent): 
   
@@ -266,7 +316,31 @@ class BaseTrigger:
   def __call__(self): 
     return False
 
+
 class ReluctantTrigger (BaseTrigger):
+  
+  def __init__(self, agent, round_no, inc): 
+    BaseTrigger.__init__(self, agent)
+    self.round_no = round_no
+    self.inc = inc
+    self.count = 0
+    self._kill = False
+
+  def kill(self):
+    self._kill = True
+
+  def __call__(self):
+    if self._kill or (self.agent.rate == self.count):
+      self.agent.history.append(
+        (self.agent.opinion, self.round_no + self.agent.rate))
+      return False
+    else: 
+      self.count += 1
+      self.agent.opinion += self.inc
+      return True
+
+
+class UnbiasedReluctantTrigger (BaseTrigger):
   
   # Trigger for a reluctant agent. 
 
@@ -285,7 +359,7 @@ class ReluctantTrigger (BaseTrigger):
       return False
     else: 
       return True
-    
+   
 
 
 
@@ -294,25 +368,28 @@ class ReluctantTrigger (BaseTrigger):
 if __name__ == '__main__': 
   #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
-  n = 20; p = 0.3
+  n = 5; p = 1.0
 
   # Graph
-  g = igraph.Graph.Barabasi(n, 3)
-  #g = igraph.Graph.Erdos_Renyi(n, p)
+  #g = igraph.Graph.Barabasi(n, 3)
+  g = igraph.Graph.Erdos_Renyi(n, p)
   
   # Agents. 
-  agents = [ Agent(1) for i in range(n) ] 
-  agents[13] = ReluctantAgent(100, 100)
+  agents = [ Agent(2) for i in range(n) ] 
+  agents[0] = ReluctantAgent(10, 5)
   #agents[13] = Agent(100)
 
   sim = Simulation(g, agents)
-  
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100000)
-  if sim.TestConvergence():
-    print "Consensus %s reached after %d rounds." % (
-        sim.GetConsensus(), sim.TimeOfConvergence())
-  else: 
-    print "Consensus not reached."
+  for guy in range(10): 
+    #print sim.Run(dynamicsModel=TestGossip, q=0.5, rounds=1)
+    print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
+    
+  #sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
+  #if sim.TestConvergence():
+  #  print "Consensus %s reached after %d rounds." % (
+  #      sim.GetConsensus(), sim.TimeOfConvergence())
+  #else: 
+  #  print "Consensus not reached."
   
   #style = {}
   #igraph.plot(g, "graph.png", **style)
