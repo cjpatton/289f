@@ -47,7 +47,7 @@ def TestGossip(g, q, round_no, trigger_list):
 TestGossip.samba = 0; 
 TestGossip.b = [(1,2), (2,3), (3,4), (1,5), (2,4), (3,4), (4,5), (2,3), (3,5), (4,5)] 
   
-
+  
 def SymmetricGossip(g, q, round_no, trigger_list):
   # Choose an edge in `g` uniformly and have the nodes exchange opinions,
   (u,v) = g.es[random.randint(0, g.ecount() - 1)].tuple
@@ -57,6 +57,7 @@ def SymmetricGossip(g, q, round_no, trigger_list):
   u.UpdateOpinion(v, v.opinion, q, round_no, trigger_list)
   v.UpdateOpinion(u, opinion, q, round_no, trigger_list)
 
+
 def AsymmetricGossip(g, q, round_no, trigger_list):
   # choose a node from `g` uniformly and have it share its opinion with
   # one of its neighbors, chosen uniformly. 
@@ -64,6 +65,7 @@ def AsymmetricGossip(g, q, round_no, trigger_list):
   if u.degree() > 0:
     v = u.neighbors()[random.randint(0, u.degree() - 1)]['agency']
     u['agency'].UpdateOpinion(v, v.opinion, q, round_no, trigger_list)
+
 
 def Broadcast(g, q, round_no, trigger_list): 
   # Choose a node from `g` uniformly and update its neighbors' opinions. 
@@ -335,7 +337,7 @@ class ReluctantTrigger (BaseTrigger):
   def __call__(self):
     if self._kill or (self.agent.rate == self.count):
       self.agent.history.append(
-        (self.agent.opinion, self.round_no + self.agent.rate))
+        (self.agent.opinion, self.round_no + self.count))
       return False
     else: 
       self.count += 1
