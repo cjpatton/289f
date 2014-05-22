@@ -145,6 +145,7 @@ class Simulation:
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
   def RunDebug(self, dynamicsModel=SymmetricGossip, q=0.5):
+    # Run one round at a time. TODO Reset debug method.  
     q = SHIFT(q)
     dynamicsModel(self.g, q, self.debug_round_no, self.debug_trigger_list)
     tmp = []
@@ -319,6 +320,8 @@ class BaseTrigger:
 
 class ReluctantTrigger (BaseTrigger):
   
+  # Trigger for a reluctant agent. 
+  
   def __init__(self, agent, round_no, inc): 
     BaseTrigger.__init__(self, agent)
     self.round_no = round_no
@@ -341,8 +344,6 @@ class ReluctantTrigger (BaseTrigger):
 
 
 class UnbiasedReluctantTrigger (BaseTrigger):
-  
-  # Trigger for a reluctant agent. 
 
   def __init__(self, agent, round_no, inc): 
     BaseTrigger.__init__(self, agent)
