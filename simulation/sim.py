@@ -292,18 +292,18 @@ class ReluctantTrigger (BaseTrigger):
 ############# Testing, testing ... ############################################
 
 if __name__ == '__main__': 
-  #g = igraph.Graph.Barabasi(20, 3)
   #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
-  n = 23; p = 0.3
+  n = 20; p = 0.3
 
   # Graph
-  g = igraph.Graph.Erdos_Renyi(n, p)
+  g = igraph.Graph.Barabasi(n, 3)
+  #g = igraph.Graph.Erdos_Renyi(n, p)
   
   # Agents. 
   agents = [ Agent(1) for i in range(n) ] 
-  agents[13] = ReluctantAgent(100, 10)
-  #agents[13] = Agent(10000)
+  agents[13] = ReluctantAgent(100, 100)
+  #agents[13] = Agent(100)
 
   sim = Simulation(g, agents)
   
