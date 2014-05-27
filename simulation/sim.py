@@ -25,6 +25,7 @@
 
 import igraph
 import random
+import colorsys
 
 
 ############# Consensus models ################################################
@@ -98,6 +99,24 @@ class Simulation:
       self.g.vs['agency'] = [ 
                   Agent(random.uniform(0,10)) for i in range(len(g.vs)) ]
 
+  def DrawGraph(self, fn): 
+    # Get value range.
+    low = min( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
+    high = max( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
+    for (u, agent) in self.IterAgents():
+      u['color'] = ScaleColor(UNSHIFT(agent.opinion - low) / UNSHIFT(high - low))
+      u['label'] = agent.GetLabel()
+      u['label_dist'] = 2
+      u['label_size'] = 10
+
+    style = {}
+    style['vertex_size'] = 14
+    style['margin'] = 20
+    #style['layout'] = g.layout_drl()
+    #style['bbox'] = (1000, 700)
+    igraph.plot(self.g, fn, **style)
+
+
   def SetOpinionsUnif(self, low, high):
     # Set opinions by selecting a real value uniformly between high and low. 
     for agent in self.g.vs['agency']:
@@ -111,10 +130,6 @@ class Simulation:
   def SetOpinion(self, i, opinion):
     # Set opinion of node `i` to `opinion`. 
     self.g.vs[i]['agency'].SetOpinion(opinion)
-
-  def SetAgentType(self, i, agentType):
-    # Configure agency of node `i`.
-    self.g.vs[i]['agency'] = agentType(self.g.vs[i]['agency'].initialOpinion)
 
   def IterAgents(self): 
     # Return a list of (Vertex, Agent) pairs.
@@ -231,6 +246,8 @@ class Agent:
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
     self.history.append((self.opinion, round_no))
 
+  def GetLabel(self): return ''
+
 
 class StubbornAgent (Agent): 
   
@@ -261,6 +278,8 @@ class ReluctantAgent (Agent):
     self.curr_trigger = ReluctantTrigger(self, round_no,
         q * (altOpinion - self.opinion) / (PRECISION * self.rate))
     trigger_list.append(self.curr_trigger)
+  
+  def GetLabel(self): return 'Rel. (tao=%d)' % self.rate
 
 
 class UnbiasedReluctantAgent (Agent): 
@@ -270,8 +289,8 @@ class UnbiasedReluctantAgent (Agent):
   # its opinion by a fixed amount at each round until a counter reaches 
   # `rate`. A reluctant agent can adapt to many opinions at the same time. 
   # Here, a trigger is created based on the current opinion, regardlesss
-  # of other triggers currently running. TODO With Erdos-Renyi graphs with 
-  # SymmetricGossip, result seems to be unbiased. Verify this analytically. 
+  # of other triggers currently running. TODO In the symmetric setting, there 
+  # appears to be no bias in the average. 
   
   def __init__(self, initialOpinion, rate):
     Agent.__init__(self, initialOpinion)
@@ -281,6 +300,8 @@ class UnbiasedReluctantAgent (Agent):
     trigger_list.append(UnbiasedReluctantTrigger(self, round_no,
         q * (altOpinion - self.opinion) / (PRECISION * self.rate)))
 
+  def GetLabel(self): 
+    return 'UnbiasedRel. (tao=%d)' % self.rate
 
 class SimultReluctantAgent (UnbiasedReluctantAgent): 
 
@@ -365,36 +386,40 @@ class UnbiasedReluctantTrigger (BaseTrigger):
       return True
    
 
+############# Miscellaneous ###################################################
+
+def ScaleColor(x):
+  (h, l, s) = (0.16666666666666666, 127.5, -1.007905138339921)
+  # Generated from ``colorsys.rgb_to_hls(255, 255, 0)``.
+  (red, green, blue) = colorsys.hls_to_rgb(x * 85, l, s)
+  return "#%02x%02x%02x" % (red, blue, green)
 
 
 ############# Testing, testing ... ############################################
 
 if __name__ == '__main__': 
-  #g = igraph.Graph.Erdos_Renyi(2000, 0.1)
 
-  n = 5; p = 1.0
-
-  # Graph
-  #g = igraph.Graph.Barabasi(n, 3)
-  g = igraph.Graph.Erdos_Renyi(n, p)
-  
-  # Agents. 
-  agents = [ Agent(2) for i in range(n) ] 
-  agents[0] = ReluctantAgent(10, 5)
-  #agents[13] = Agent(100)
-
-  sim = Simulation(g, agents)
-  for guy in range(10): 
-    #print sim.Run(dynamicsModel=TestGossip, q=0.5, rounds=1)
-    print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
+  # Debug
+  #g = igraph.Graph.Erdos_Renyi(5, 1.0)
+  #agents = [ Agent(2) for i in range(5) ] 
+  #agents[0] = ReluctantAgent(10, 5)
+  #sim = Simulation(g, agents)
+  #for guy in range(10): 
+  #  print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
     
-  #sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
-  #if sim.TestConvergence():
-  #  print "Consensus %s reached after %d rounds." % (
-  #      sim.GetConsensus(), sim.TimeOfConvergence())
-  #else: 
-  #  print "Consensus not reached."
-  
-  #style = {}
-  #igraph.plot(g, "graph.png", **style)
+  n = 30; p = 0.1
+  g = igraph.Graph.Erdos_Renyi(n, p)
+  agents = [ Agent(1) for i in range(n) ]
+  #agents[10] = ReluctantAgent(10, 100)
+  agents[0] = UnbiasedReluctantAgent(10, 100)
+
+  sim = Simulation(g, agents) 
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=1000)
+  if sim.TestConvergence():
+    print "Consensus %s reached after %d rounds." % (
+        sim.GetConsensus(), sim.TimeOfConvergence())
+  else: 
+    print "Consensus not reached."
+ 
+  sim.DrawGraph("graph.png")
   
