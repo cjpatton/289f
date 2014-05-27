@@ -328,9 +328,9 @@ class QueuingReluctantAgent (UnbiasedReluctantAgent):
        # the updates here.
 
 
-class ChecksumAgent (Agent): 
-  # Only reaches consensus when all opinions reach all other nodes. 
-  # This typicall takes a long time. 
+class XORAgent (Agent): 
+  # Only reaches consensus when all opinions reach all other nodes, and
+  # consensus is always zero. This typically takes a long time. 
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
     self.opinion = self.opinion ^ altOpinion 
     self.history.append((self.opinion, round_no))
