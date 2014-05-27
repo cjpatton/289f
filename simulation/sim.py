@@ -100,7 +100,7 @@ class Simulation:
                   Agent(random.uniform(0,10)) for i in range(len(g.vs)) ]
 
   def DrawGraph(self, fn): 
-    # Get value range.
+    # Draw graph and save to file.
     low = min( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
     high = max( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
     for (u, agent) in self.IterAgents():
@@ -111,7 +111,7 @@ class Simulation:
 
     style = {}
     style['vertex_size'] = 14
-    style['margin'] = 20
+    style['margin'] = 80
     #style['layout'] = g.layout_drl()
     #style['bbox'] = (1000, 700)
     igraph.plot(self.g, fn, **style)
@@ -303,6 +303,7 @@ class UnbiasedReluctantAgent (Agent):
   def GetLabel(self): 
     return 'UnbiasedRel. (tao=%d)' % self.rate
 
+
 class SimultReluctantAgent (UnbiasedReluctantAgent): 
 
   # This reluctant agent deals with the simultaneous trigger problem by 
@@ -326,6 +327,15 @@ class QueuingReluctantAgent (UnbiasedReluctantAgent):
   pass # TODO SimultReluctantAgent frequently diverges. Try serializing 
        # the updates here.
 
+
+class ChecksumAgent (Agent): 
+  # Only reaches consensus when all opinions reach all other nodes. 
+  # This typicall takes a long time. 
+  def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
+    self.opinion = self.opinion ^ altOpinion 
+    self.history.append((self.opinion, round_no))
+
+  
 
 ############# Triggers ########################################################
 
@@ -407,14 +417,15 @@ if __name__ == '__main__':
   #for guy in range(10): 
   #  print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
     
-  n = 30; p = 0.1
+  n = 30; p = 0.2
   g = igraph.Graph.Erdos_Renyi(n, p)
   agents = [ Agent(1) for i in range(n) ]
   #agents[10] = ReluctantAgent(10, 100)
   agents[0] = UnbiasedReluctantAgent(10, 100)
+  #agents[0] = Agent(10)
 
   sim = Simulation(g, agents) 
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=1000)
+  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
   if sim.TestConvergence():
     print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())
