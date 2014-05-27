@@ -2,7 +2,7 @@ clear all; close all; clc;
 % Codes for ECS289F - "Opinion dynamics w/ reluctant agents"
 % Feel free to play around with it...
 
-N = 20;
+N = 10;
 A = ones(N) - eye(N); % This is a fully connected graph
 iter_max = 5e2; % the max. no. of iterations 
 
@@ -12,10 +12,10 @@ flag = 0; % if flag = 0, run the standard reluctant agent model -> results in bi
 
 % Specify the adaptivity of the agents
 tau_x = 1*ones(N,1); 
-tau_x(1:1) = 20; % select the reluctant agents. WLOG, we always assume the reluctant agent are the first
+tau_x(1:2) = 2; % select the reluctant agents. WLOG, we always assume the reluctant agent are the first
 
-the_vector = zeros(N,100);
-for monte_carlo = 1 : 100
+the_vector = zeros(N,1000);
+for monte_carlo = 1 : 1000
     x0 = ones(N,1);
 % x0 = 1*rand(N,1); % Initialize the opinion with some random numbers..
 x0(1) = 100;

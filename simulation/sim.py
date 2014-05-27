@@ -34,7 +34,8 @@ import random
 ###############################################################################
 
 def TestGossip(g, q, round_no, trigger_list): 
-  # G should be a complete, 5 node grpah.
+  # Fixed sequence of symmetric gossip rounds for 
+  # testing. G must have at least nodes.
   (u, v) = TestGossip.b[TestGossip.samba]
   u -= 1; v -= 1
   TestGossip.samba = (TestGossip.samba + 1) % 10
