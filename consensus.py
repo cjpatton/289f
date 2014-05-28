@@ -140,8 +140,8 @@ class Simulation:
     for agent in self.g.vs['agency']:
       agent.SetOpinion(random.uniform(low, high))
 
-  def RestoreOpinions(self):
-    # Restore initial opinion for all agents. 
+  def Reset(self):
+    # Restore initial opinion for all agents and delete history.  
     self.round_no = self.debug_round_no = 0
     for agent in self.g.vs['agency']:
       agent.RestoreInitialOpinion()
@@ -227,8 +227,8 @@ class Simulation:
     # Return a list of consensus scores for each component. (Note 
     # that the value isn't valid if consensus hasn't been reached.) 
     consensus = []
-    for c in self.g.components(): 
-      consensus.append(g.vs[c[0]]['agency'].GetOpinion())
+    for c in reversed(sorted(self.g.components(), key=lambda(c) : len(c))): 
+      consensus.append(self.g.vs[c[0]]['agency'].GetOpinion())
     return consensus
 
 
@@ -256,6 +256,7 @@ class Agent:
     self.initialOpinion = self.opinion = SHIFT(initialOpinion)
 
   def RestoreInitialOpinion(self):
+    self.history = [(SHIFT(self.initialOpinion), 0)]
     self.opinion = self.initialOpinion
   
   def SetOpinion(self, opinion):
@@ -439,24 +440,37 @@ if __name__ == '__main__':
   #sim = Simulation(g, agents)
   #for guy in range(10): 
   #  print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
-    
-  n = 100; p = 0.048
-  g = igraph.Graph.Erdos_Renyi(n, p)
+ 
+  # Barabasi-Albert
+  n = 100; k = 3 
+  g = igraph.Graph.Barabasi(n, k)
+  title = "Barabasi-Albert(n=%d, k=%d)" % (n, k)
   agents = [ Agent(1) for i in range(n) ]
-  #agents[10] = ReluctantAgent(10, 100)
-  agents[1] = ReluctantAgent(100, 50)
-  
-  title = "Erdos-Renyi(n=%d, p=%f)" % (n, p)
-  sim = Simulation(g, agents) 
+  agents[0] = ReluctantAgent(100, 50)
+  sim = Simulation(g, agents)
   sim.DrawGraph("graph%06d.png" % sim.round_no, title)
   while not sim.TestConvergence():
     sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100)
     sim.DrawGraph("graph%06d.png" % sim.round_no, title)
   print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())
-  
-  # Want to show a plot with the time to consensus ...
   sim.round_no = sim.TimeOfConvergence()
   sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+
+  # Erdos-Renyi 
+  #n = 100; p = 0.048
+  #g = igraph.Graph.Erdos_Renyi(n, p)
+  #agents = [ Agent(1) for i in range(n) ]
+  #agents[1] = ReluctantAgent(100, 50)
+  #title = "Erdos-Renyi(n=%d, p=%f)" % (n, p)
+  #sim = Simulation(g, agents) 
+  #sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+  #while not sim.TestConvergence():
+  #  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100)
+  #  sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+  #print "Consensus %s reached after %d rounds." % (
+  #      sim.GetConsensus(), sim.TimeOfConvergence())
+  #sim.round_no = sim.TimeOfConvergence()
+  #sim.DrawGraph("graph%06d.png" % sim.round_no, title)
   
   
