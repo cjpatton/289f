@@ -7,3 +7,4 @@
 *.bib
 *.swp
 .dropbox
+*.pyc

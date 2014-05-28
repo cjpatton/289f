@@ -270,12 +270,13 @@ class Agent:
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
     # The new opinion is averaged with the old opinion with weight `q`. 
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
+    self.UpdateHistory(round_no)
 
-  def UpdateHistory(self, newOpinion, round_no):
-    if self.history[-1][0] == newOpinion:
-      self.history[-1] = (newOpinion, round_no)
+  def UpdateHistory(self, round_no):
+    if self.history[-1][0] == self.opinion:
+      self.history[-1] = (self.opinion, round_no)
     else:
-      self.history.append((newOpinion, round_no))
+      self.history.append((self.opinion, round_no))
 
   def GetLabel(self): return ''
 
@@ -288,7 +289,7 @@ class StubbornAgent (Agent):
     Agent.__init__(initialOpinion)
 
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
-    self.UpdateHistory(self.opinion, round_No)
+    self.UpdateHistory(round_no)
 
 
 class ReluctantAgent (Agent): 
@@ -399,8 +400,7 @@ class ReluctantTrigger (BaseTrigger):
 
   def __call__(self):
     if self._kill or (self.agent.rate == self.count):
-      self.agent.UpdateHistory(
-        self.agent.opinion, self.round_no + self.count)
+      self.agent.UpdateHistory(self.round_no + self.count)
       return False
     else: 
       self.count += 1
@@ -420,8 +420,7 @@ class UnbiasedReluctantTrigger (BaseTrigger):
     self.agent.opinion += self.inc
     self.count += 1
     if (self.agent.rate == self.count):
-      self.agent.UpdateHistory(
-        self.agent.opinion, self.round_no + self.agent.rate)
+      self.agent.UpdateHistory(self.round_no + self.agent.rate)
       return False
     else: 
       return True
