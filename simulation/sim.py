@@ -91,6 +91,10 @@ class Simulation:
  
   def __init__(self, g, agents=None):
     self.g = g
+    self.style = {}
+    self.style['vertex_size'] = 14
+    self.style['margin'] = 80
+    self.style['layout'] = self.g.layout("kk")
     self.debug_trigger_list = []
     self.debug_round_no = 0
     self.round_no = 0
@@ -111,12 +115,9 @@ class Simulation:
       u['label_dist'] = 2
       u['label_size'] = 10
 
-    style = {}
-    style['vertex_size'] = 14
-    style['margin'] = 80
     #style['layout'] = g.layout_drl()
     #style['bbox'] = (1000, 700)
-    igraph.plot(self.g, fn, **style)
+    igraph.plot(self.g, fn, **self.style)
 
 
   def SetOpinionsUnif(self, low, high):
@@ -437,4 +438,5 @@ if __name__ == '__main__':
     print "Consensus not reached."
  
   sim.DrawGraph("graph.png")
+  sim.DrawGraph("graph2.png")
   
