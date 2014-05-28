@@ -95,7 +95,7 @@ class Simulation:
     self.style = {}
     self.style['vertex_size'] = 14
     self.style['margin'] = 60
-    self.style['layout'] = self.g.layout("kk")
+    self.style['layout'] = None
     self.style['bbox'] = (900, 780)
     self.style['edge_color'] = 'grey'
     self.debug_trigger_list = []
@@ -111,6 +111,8 @@ class Simulation:
   def DrawGraph(self, fn, title=None): 
     # Draw graph and save to file.
     plot = igraph.Plot(fn, bbox = (900, 780), background="white")
+    if self.style['layout'] == None:
+      self.style['layout'] = self.g.layout("kk")
 
     low = min( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
     high = max( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
@@ -268,7 +270,12 @@ class Agent:
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
     # The new opinion is averaged with the old opinion with weight `q`. 
     self.opinion = ((PRECISION - q) * self.opinion + q * altOpinion) / PRECISION
-    self.history.append((self.opinion, round_no))
+
+  def UpdateHistory(self, newOpinion, round_no):
+    if self.history[-1][0] == newOpinion:
+      self.history[-1] = (newOpinion, round_no)
+    else:
+      self.history.append((newOpinion, round_no))
 
   def GetLabel(self): return ''
 
@@ -281,7 +288,7 @@ class StubbornAgent (Agent):
     Agent.__init__(initialOpinion)
 
   def UpdateOpinion(self, agent, altOpinion, q, round_no, trigger_list=None): 
-    self.history.append((self.opinion, round_no))
+    self.UpdateHistory(self.opinion, round_No)
 
 
 class ReluctantAgent (Agent): 
@@ -392,8 +399,8 @@ class ReluctantTrigger (BaseTrigger):
 
   def __call__(self):
     if self._kill or (self.agent.rate == self.count):
-      self.agent.history.append(
-        (self.agent.opinion, self.round_no + self.count))
+      self.agent.UpdateHistory(
+        self.agent.opinion, self.round_no + self.count)
       return False
     else: 
       self.count += 1
@@ -413,8 +420,8 @@ class UnbiasedReluctantTrigger (BaseTrigger):
     self.agent.opinion += self.inc
     self.count += 1
     if (self.agent.rate == self.count):
-      self.agent.history.append(
-        (self.agent.opinion, self.round_no + self.agent.rate))
+      self.agent.UpdateHistory(
+        self.agent.opinion, self.round_no + self.agent.rate)
       return False
     else: 
       return True

@@ -38,20 +38,19 @@ col =          sys.argv[2]
 ymax =   float(sys.argv[3])
 
 xlabel = "Time of convergence (rounds)" if col == 'rounds' else 'Consensus'
-ylabel = "Density"
-N = 75
-xmin = 0     
+ylabel = "Frequency"
+N = 50
 
 
 # FIXME 
 data['consensus'] = map(lambda(x) : float(x), data['consensus'])
 data['rounds'] = map(lambda(x) : int(x), data['rounds'])
 
-fig = plt.figure()
+fig = plt.figure(figsize=(5,4))
 ax = fig.add_subplot(111)
 
 # the histogram of the data
-n, bins, patches = ax.hist(data[col], N, normed=1, facecolor='grey', alpha=0.75)
+n, bins, patches = ax.hist(data[col], N, facecolor='grey', alpha=0.75)
 bincenters = 0.5*(bins[1:]+bins[:-1])
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
