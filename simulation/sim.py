@@ -47,7 +47,8 @@ def TestGossip(g, q, round_no, trigger_list):
   v.UpdateOpinion(u, opinion, q, round_no, trigger_list)
 
 TestGossip.samba = 0; 
-TestGossip.b = [(1,2), (2,3), (3,4), (1,5), (2,4), (3,4), (4,5), (2,3), (3,5), (4,5)] 
+TestGossip.b = [(1,2), (2,3), (3,4), (1,5), (2,4), 
+                (3,4), (4,5), (2,3), (3,5), (4,5)] 
   
   
 def SymmetricGossip(g, q, round_no, trigger_list):
@@ -92,6 +93,7 @@ class Simulation:
     self.g = g
     self.debug_trigger_list = []
     self.debug_round_no = 0
+    self.round_no = 0
     if agents:
       assert len(agents) == len(g.vs)
       self.g.vs['agency'] = agents
@@ -124,6 +126,7 @@ class Simulation:
 
   def RestoreOpinions(self):
     # Restore initial opinion for all agents. 
+    self.round_no = self.debug_round_no = 0
     for agent in self.g.vs['agency']:
       agent.RestoreInitialOpinion()
 
@@ -143,8 +146,9 @@ class Simulation:
     for r in range(rounds):
 
       # Run model. 
-      dynamicsModel(self.g, q, r, trigger_list)
-      
+      dynamicsModel(self.g, q, self.round_no, trigger_list)
+      self.round_no += 1
+
       # Process triggers.
       tmp = []
       for trigger in trigger_list:
@@ -422,7 +426,7 @@ if __name__ == '__main__':
   agents = [ Agent(1) for i in range(n) ]
   #agents[10] = ReluctantAgent(10, 100)
   agents[0] = UnbiasedReluctantAgent(10, 100)
-  #agents[0] = Agent(10)
+  agents[1] = UnbiasedReluctantAgent(99, 30)
 
   sim = Simulation(g, agents) 
   sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
