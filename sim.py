@@ -26,7 +26,8 @@
 import igraph
 import random
 import colorsys
-
+import cairo
+from igraph.drawing.text import TextDrawer
 
 ############# Consensus models ################################################
 # Asynchronous opnion dynamics models. Nodes of `g` are expected to have 
@@ -93,8 +94,10 @@ class Simulation:
     self.g = g
     self.style = {}
     self.style['vertex_size'] = 14
-    self.style['margin'] = 80
+    self.style['margin'] = 60
     self.style['layout'] = self.g.layout("kk")
+    self.style['bbox'] = (900, 780)
+    self.style['edge_color'] = 'grey'
     self.debug_trigger_list = []
     self.debug_round_no = 0
     self.round_no = 0
@@ -105,19 +108,31 @@ class Simulation:
       self.g.vs['agency'] = [ 
                   Agent(random.uniform(0,10)) for i in range(len(g.vs)) ]
 
-  def DrawGraph(self, fn): 
+  def DrawGraph(self, fn, title=None): 
     # Draw graph and save to file.
+    plot = igraph.Plot(fn, bbox = (900, 780), background="white")
+
     low = min( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
     high = max( map(lambda(agent) : agent.initialOpinion, self.g.vs['agency']) )
     for (u, agent) in self.IterAgents():
-      u['color'] = ScaleColor(UNSHIFT(agent.opinion - low) / UNSHIFT(high - low))
+      u['color'] = ScaleColor(UNSHIFT(agent.opinion) / UNSHIFT(high))
       u['label'] = agent.GetLabel()
       u['label_dist'] = 2
       u['label_size'] = 10
 
-    #style['layout'] = g.layout_drl()
-    #style['bbox'] = (1000, 700)
-    igraph.plot(self.g, fn, **self.style)
+    plot.add(self.g, **self.style)
+    plot.redraw()
+    ctx = cairo.Context(plot.surface)
+    ctx.set_font_size(22)
+    if title:
+      drawer = TextDrawer(ctx, title, halign=TextDrawer.CENTER)
+      drawer.draw_at(0, 40, width=900)
+   
+    ctx.set_font_size(18)
+    drawer = TextDrawer(ctx, 'Round No. %d' % self.round_no, halign=TextDrawer.RIGHT)
+    drawer.draw_at(860, 770, width=9)
+    
+    plot.save()
 
 
   def SetOpinionsUnif(self, low, high):
@@ -139,6 +154,7 @@ class Simulation:
     # Return a list of (Vertex, Agent) pairs.
     for u in self.g.vs: 
       yield (u, u['agency'])
+
 
   def Run(self, dynamicsModel=SymmetricGossip, q=0.5, rounds=1000):
     # Run simulation for some number of rounds and return the opinion vector. 
@@ -167,8 +183,9 @@ class Simulation:
 
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
 
+
   def RunDebug(self, dynamicsModel=SymmetricGossip, q=0.5):
-    # Run one round at a time. TODO Reset debug method.  
+    # Run one round at a time.  
     q = SHIFT(q)
     dynamicsModel(self.g, q, self.debug_round_no, self.debug_trigger_list)
     tmp = []
@@ -178,7 +195,8 @@ class Simulation:
     self.debug_trigger_list = tmp
     self.debug_round_no += 1
     return [ agent.GetOpinion() for agent in self.g.vs['agency'] ]
-    
+
+
   def TestConvergence(self, err=0.0001):
     # Test if consenus has been reached. 
     err = SHIFT(err)
@@ -284,7 +302,7 @@ class ReluctantAgent (Agent):
         q * (altOpinion - self.opinion) / (PRECISION * self.rate))
     trigger_list.append(self.curr_trigger)
   
-  def GetLabel(self): return 'Rel. (tao=%d)' % self.rate
+  def GetLabel(self): return 'Reluctant, tao=%d' % self.rate
 
 
 class UnbiasedReluctantAgent (Agent): 
@@ -406,7 +424,7 @@ class UnbiasedReluctantTrigger (BaseTrigger):
 def ScaleColor(x):
   (h, l, s) = (0.16666666666666666, 127.5, -1.007905138339921)
   # Generated from ``colorsys.rgb_to_hls(255, 255, 0)``.
-  (red, green, blue) = colorsys.hls_to_rgb(x * 85, l, s)
+  (red, green, blue) = colorsys.hls_to_rgb(x * 70, l, s)
   return "#%02x%02x%02x" % (red, blue, green)
 
 
@@ -422,21 +440,23 @@ if __name__ == '__main__':
   #for guy in range(10): 
   #  print sim.RunDebug(dynamicsModel=TestGossip, q=0.5)
     
-  n = 30; p = 0.2
+  n = 100; p = 0.048
   g = igraph.Graph.Erdos_Renyi(n, p)
   agents = [ Agent(1) for i in range(n) ]
   #agents[10] = ReluctantAgent(10, 100)
-  agents[0] = UnbiasedReluctantAgent(10, 100)
-  agents[1] = UnbiasedReluctantAgent(99, 30)
-
+  agents[1] = ReluctantAgent(100, 50)
+  
+  title = "Erdos-Renyi(n=%d, p=%f)" % (n, p)
   sim = Simulation(g, agents) 
-  sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=10000)
-  if sim.TestConvergence():
-    print "Consensus %s reached after %d rounds." % (
+  sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+  while not sim.TestConvergence():
+    sim.Run(dynamicsModel=SymmetricGossip, q=0.5, rounds=100)
+    sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+  print "Consensus %s reached after %d rounds." % (
         sim.GetConsensus(), sim.TimeOfConvergence())
-  else: 
-    print "Consensus not reached."
- 
-  sim.DrawGraph("graph.png")
-  sim.DrawGraph("graph2.png")
+  
+  # Want to show a plot with the time to consensus ...
+  sim.round_no = sim.TimeOfConvergence()
+  sim.DrawGraph("graph%06d.png" % sim.round_no, title)
+  
   
