@@ -15,7 +15,7 @@ def exp(fn, g, agents, trials):
   fd.close()
 
 
-trials = 1000
+trials = 250
 
 vs = set()
 es = []
@@ -38,6 +38,13 @@ n = len(vs)
 g = igraph.Graph()
 g.add_vertices(n)
 g.add_edges(es)
+
+#a = open('kdist.csv', 'w')
+#a.write('degree')
+#for u in g.vs:
+#  a.write('%d\n' % u.degree())
+#sys.exit(0)
+
 print n
 i = random.randint(0,n-1)
 
